@@ -81,51 +81,6 @@ Les imprimeries gèrent souvent leurs devis sur Excel, leurs commandes sur papie
 
 ---
 
-## 🚀 Installation
-
-### Prérequis
-
-- Node.js 18+
-- Compte [Neon](https://neon.tech) (PostgreSQL serverless gratuit)
-- Clé API [Anthropic](https://console.anthropic.com) (optionnel, pour l'analyse IA)
-
-### Étapes
-
-1. **Cloner le repository**
-```bash
-git clone https://github.com/votre-username/rapid-pub.git
-cd rapid-pub
-```
-
-2. **Installer les dépendances**
-```bash
-npm install
-```
-
-3. **Configurer les variables d'environnement**
-```bash
-cp .env.example .env.local
-```
-
-Éditez `.env.local` :
-```env
-DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
-ANTHROPIC_API_KEY="sk-ant-..." # Optionnel
-```
-
-4. **Initialiser la base de données**
-
-Exécutez le contenu de `scripts/init-db.sql` dans votre console Neon.
-
-5. **Lancer l'application**
-```bash
-npm run dev
-```
-
-Ouvrez [http://localhost:3000](http://localhost:3000) 🎉
-
----
-
 ## 🛠️ Stack technique
 
 | Catégorie | Technologie |
