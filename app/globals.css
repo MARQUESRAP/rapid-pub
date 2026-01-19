@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Primary - Orange Rapid-Pub */
+  --color-primary: #FF8C00;
+  --color-primary-hover: #E67E00;
+  --color-primary-light: #FFF3E0;
+  
+  /* Backgrounds */
+  --color-background: #FFFFFF;
+  --color-background-secondary: #F8F9FA;
+  --color-background-card: #FFFFFF;
+  
+  /* Text */
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  
+  /* Borders */
+  --color-border: #E5E7EB;
+  --color-border-light: #F3F4F6;
+  
+  /* Status */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* Font */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
