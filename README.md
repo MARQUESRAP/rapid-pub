@@ -1,76 +1,212 @@
-# LinkedIn Post Generator - Rapid Pub
+# 🖨️ Rapid-Pub - Dashboard de gestion pour imprimerie
 
-Générateur automatique de posts LinkedIn pour Rapid Pub, une imprimerie B2B française avec livraison en 24h.
+<div align="center">
 
-## Architecture WAT
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?style=for-the-badge&logo=tailwind-css)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=for-the-badge&logo=postgresql)
 
-Ce projet utilise l'architecture **WAT** (Workflows, Agents, Tools) pour séparer les préoccupations :
+**Application complète de gestion pour imprimerie : devis, commandes, factures, clients et production.**
 
-- **Workflows** (`workflows/`) : Instructions en markdown (SOPs)
-- **Agents** (Claude) : Prise de décision intelligente et orchestration
-- **Tools** (`tools/`) : Scripts Python d'exécution déterministes
+[Démo](#-démonstration) • [Fonctionnalités](#-fonctionnalités) • [Installation](#-installation) • [Technologies](#-stack-technique)
 
-## Structure du projet
+</div>
+
+---
+
+## 📋 À propos
+
+Rapid-Pub est un dashboard de gestion conçu pour les imprimeries et entreprises de communication visuelle. Il permet de gérer l'ensemble du cycle de vente : de la demande client jusqu'à la facturation, en passant par la production.
+
+### Le problème résolu
+
+Les imprimeries gèrent souvent leurs devis sur Excel, leurs commandes sur papier, et perdent du temps à relancer manuellement les clients. Rapid-Pub centralise tout dans une interface moderne et automatise les tâches répétitives.
+
+---
+
+## ✨ Fonctionnalités
+
+### 🎯 Gestion commerciale
+- **Analyse IA des demandes** : Collez un email client, l'IA extrait automatiquement les informations (produit, quantité, format, finitions)
+- **Génération de devis PDF** : Documents professionnels avec logo, conditions, TVA
+- **Suivi des relances** : Compteur de relances et alertes pour les devis sans réponse
+- **Envoi email intégré** : Envoyez vos devis directement depuis l'application
+
+### 📊 Dashboard intelligent
+- **Vue Kanban** : Visualisez vos devis et commandes par statut
+- **Graphiques temps réel** : CA mensuel, taux de conversion, top clients
+- **Alertes intelligentes** : Notifications pour les actions urgentes
+- **Recherche globale** : Trouvez n'importe quoi en tapant ⌘K
+
+### 📦 Gestion de production
+- **Calendrier de production** : Vue mensuelle des livraisons prévues
+- **Suivi des commandes** : Nouvelle → En production → Prêt → Livré
+- **Génération automatique** : Devis accepté = Commande créée automatiquement
+
+### 💰 Facturation
+- **Création automatique** : Commande livrée = Facture générée
+- **Suivi des paiements** : Émise, Payée, En retard
+- **Calcul TVA automatique** : Configurable dans les paramètres
+
+### ⚙️ Configuration
+- **Grille tarifaire** : Définissez vos prix par produit et quantité
+- **Informations entreprise** : SIRET, TVA, IBAN pour les documents
+- **Paramètres email** : Signature et expéditeur personnalisables
+
+---
+
+## 🖼️ Aperçu
 
 ```
-├── CLAUDE.md              # Instructions pour l'agent
-├── README.md              # Ce fichier
-├── requirements.txt       # Dépendances Python
-├── .env                   # Variables d'environnement (à créer)
-├── .env.example           # Template pour .env
-├── workflows/             # Workflows en markdown
-├── tools/                 # Scripts Python
-└── .tmp/                  # Fichiers temporaires (régénérables)
+┌────────────────────────────────────────────────────────────────┐
+│  🟠 Rapid-Pub                    🔍 Rechercher... (⌘K)    🔔   │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐          │
+│  │ À traiter│ │ Envoyés  │ │ En prod. │ │ CA mois  │          │
+│  │    3     │ │    5     │ │    2     │ │  2 450€  │          │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘          │
+│                                                                │
+│  ┌─────────────┬─────────────┬─────────────┬─────────────┐    │
+│  │ À TRAITER   │ DEVIS ENVOY │ PRODUCTION  │ TERMINÉ     │    │
+│  ├─────────────┼─────────────┼─────────────┼─────────────┤    │
+│  │ DEV-2026-01 │ DEV-2026-03 │ CMD-2026-01 │ CMD-2025-98 │    │
+│  │ Dupont SARL │ Martin & Co │ Leroy Dist. │ Dupont SARL │    │
+│  │ 156€        │ 133€  J+5   │ 350€        │ 280€        │    │
+│  └─────────────┴─────────────┴─────────────┴─────────────┘    │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-## Installation
+---
 
-1. **Cloner et installer les dépendances** :
-```bash
-pip install -r requirements.txt
+## 🛠️ Stack technique
+
+| Catégorie | Technologie |
+|-----------|-------------|
+| **Framework** | Next.js 15 (App Router) |
+| **Langage** | TypeScript |
+| **Style** | Tailwind CSS |
+| **Base de données** | PostgreSQL (Neon) |
+| **Graphiques** | Recharts |
+| **IA** | Claude API (Anthropic) |
+| **Icônes** | Lucide React |
+
+### Architecture
+
+```
+rapid-pub/
+├── app/
+│   ├── api/           # 13 routes API REST
+│   ├── devis/         # Pages devis
+│   ├── commandes/     # Pages commandes
+│   ├── clients/       # Pages clients
+│   ├── factures/      # Pages factures
+│   ├── calendrier/    # Planning production
+│   └── parametres/    # Configuration
+├── components/
+│   ├── ui/            # Composants réutilisables
+│   ├── layout/        # Sidebar, Header
+│   └── dashboard/     # Kanban, Charts
+├── lib/
+│   ├── db.ts          # Connexion PostgreSQL
+│   └── utils.ts       # Fonctions utilitaires
+└── scripts/
+    └── init-db.sql    # Script initialisation BDD
 ```
 
-2. **Configurer les variables d'environnement** :
-```bash
-cp .env.example .env
-# Éditer .env avec vos vraies clés API
+---
+
+## 📡 API Routes
+
+| Route | Méthodes | Description |
+|-------|----------|-------------|
+| `/api/dashboard` | GET | Données Kanban |
+| `/api/clients` | GET, POST | Liste et création clients |
+| `/api/devis` | GET, POST | Liste et création devis |
+| `/api/devis/[id]` | GET, PATCH, DELETE | Détail et modification devis |
+| `/api/commandes` | GET | Liste commandes |
+| `/api/commandes/[id]` | GET, PATCH | Détail et modification commande |
+| `/api/factures` | GET | Liste factures |
+| `/api/factures/[id]` | PATCH | Marquer facture payée |
+| `/api/stats` | GET | Statistiques pour graphiques |
+| `/api/alertes` | GET | Alertes intelligentes |
+| `/api/search` | GET | Recherche globale |
+| `/api/calendrier` | GET | Planning production |
+| `/api/email` | POST | Envoi email |
+| `/api/pdf/[type]/[id]` | GET | Génération PDF |
+| `/api/ai/analyze` | POST | Analyse IA demande client |
+| `/api/parametres` | GET, POST | Configuration |
+
+---
+
+## 🔄 Workflow métier
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   DEMANDE   │────▶│    DEVIS    │────▶│  COMMANDE   │────▶│   FACTURE   │
+│   CLIENT    │     │  Brouillon  │     │  Nouvelle   │     │   Émise     │
+└─────────────┘     │  → Envoyé   │     │  → En prod  │     │   → Payée   │
+                    │  → Accepté  │     │  → Prêt     │     └─────────────┘
+                    └─────────────┘     │  → Livré    │
+                           │            └─────────────┘
+                           │                   │
+                           └───── AUTO ────────┘
+                         (Commande créée       (Facture créée
+                          automatiquement)      automatiquement)
 ```
 
-3. **Configurer les credentials Google** (optionnel) :
-   - Placer `credentials.json` à la racine pour Google Sheets/Slides
-   - Le fichier `token.json` sera généré automatiquement
+---
 
-## Workflow principal
+## 🎯 Roadmap
 
-Le workflow génère 10 posts LinkedIn variés en suivant ces étapes :
+- [ ] **Portail client** - Validation devis en ligne avec signature électronique
+- [ ] **Calcul auto des prix** - L'IA calcule le prix selon la grille tarifaire
+- [ ] **Planning Gantt** - Vue avancée de la production par poste de travail
+- [ ] **Export comptable** - Génération CSV/Excel pour le comptable
+- [ ] **Notifications SMS** - "Votre commande est prête à récupérer"
+- [ ] **Gestion des stocks** - Alertes quand un papier est bientôt épuisé
+- [ ] **Application mobile** - Gestion depuis le téléphone
 
-1. **Collecte** : RSS feeds + Contenus client Airtable
-2. **Analyse IA** : Identification des tendances avec GPT-4
-3. **Génération** : 10 posts variés (5 catégories × 2)
-4. **Scoring** : Évaluation du potentiel d'engagement
-5. **Visuels** : Génération de prompts puis images DALL-E
-6. **Stockage** : Airtable + Cloudinary
+---
 
-## Catégories de posts
+## 📊 Données de démonstration
 
-- **Éducatif** : Tips pratiques sur l'impression
-- **Coulisses** : Behind the scenes, équipe, process
-- **Actualité** : News secteur, tendances
-- **Storytelling** : Cas clients, témoignages
-- **Décalé** : Humour, format original
+Le script `init-db.sql` inclut des données de test :
 
-## Utilisation
+- **5 clients** (Dupont SARL, Martin & Co, Garcia Industries...)
+- **7 devis** (2 brouillons, 3 envoyés, 2 acceptés)
+- **7 commandes** (nouvelles, en production, prêtes, livrées)
+- **5 factures** (émises, payées, en retard)
+- **32 paramètres** (grille tarifaire, infos entreprise...)
 
-Voir les workflows individuels dans `workflows/` pour les instructions détaillées.
+---
 
-## Migration depuis n8n
+## 🤝 Contribution
 
-Ce projet était initialement un workflow n8n (voir `LinkedIn Post Generator RapidPub-2.json`). Il a été migré vers l'architecture WAT pour :
-- Plus de contrôle et de flexibilité
-- Meilleure gestion des erreurs
-- Évolutivité et maintenance facilitée
-- Coûts API optimisés
+Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
 
-## Support
+1. Fork le projet
+2. Créez votre branche (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Committez vos changements (`git commit -m 'Ajout nouvelle fonctionnalité'`)
+4. Push sur la branche (`git push origin feature/nouvelle-fonctionnalite`)
+5. Ouvrez une Pull Request
 
-Pour toute question, référez-vous à `CLAUDE.md` pour comprendre comment l'agent fonctionne avec ce projet.
+---
+
+## 📄 Licence
+
+MIT © [Gralt](https://gralt.fr)
+
+---
+
+<div align="center">
+
+**Développé avec ❤️ par [Gralt](https://gralt.fr)**
+
+*Automatisation IA & Process pour PME*
+
+[Site web](https://gralt.fr) • [LinkedIn](https://linkedin.com/in/votre-profil)
+
+</div>
