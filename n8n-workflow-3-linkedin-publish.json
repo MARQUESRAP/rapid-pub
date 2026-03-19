@@ -1,0 +1,614 @@
+{
+  "name": "Workflow 3 - Publication LinkedIn",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10,
+              "triggerAtDay": 2
+            },
+            {
+              "triggerAtHour": 14,
+              "triggerAtDay": 4
+            }
+          ]
+        },
+        "options": {
+          "timezone": "Europe/Paris"
+        }
+      },
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "getAll",
+        "tableId": "posts",
+        "returnAll": false,
+        "limit": 10,
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "statut",
+              "condition": "equals",
+              "keyValue": "Planifie"
+            }
+          ]
+        },
+        "additionalFields": {
+          "order": "date_publication_prevue.asc"
+        }
+      },
+      "name": "Get Posts to Publish",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "number": [
+            {
+              "value1": "={{ $input.all().length }}",
+              "operation": "largerEqual",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "name": "IF Posts Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1
+      },
+      "name": "Loop Each Post",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        910,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\n\n// Construire le contenu du post LinkedIn\nconst parts = [];\nif (post.hook) parts.push(post.hook);\nif (post.corps) parts.push(post.corps);\nif (post.cta) parts.push(post.cta);\nif (post.hashtags) parts.push(post.hashtags);\n\nconst content = parts.join('\\n\\n');\n\nreturn {\n  json: {\n    post_id: post.id,\n    content: content,\n    image_url: post.image_url,\n    titre: post.titre_interne || 'Post LinkedIn',\n    // PLACEHOLDER: Remplacer par votre Organization URN LinkedIn\n    organization_urn: 'urn:li:organization:XXXXXXXX'\n  }\n};"
+      },
+      "name": "Prepare Post Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.image_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1350,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ registerUploadRequest: { recipes: ['urn:li:digitalmediaRecipe:feedshare-image'], owner: $('Prepare Post Data').first().json.organization_urn, serviceRelationships: [{ relationshipType: 'OWNER', identifier: 'urn:li:userGeneratedContent' }] } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "name": "Register Image Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1570,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "linkedin-oauth2-header",
+          "name": "LinkedIn OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Upload Image Binary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1790,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "linkedin-oauth2-header",
+          "name": "LinkedIn OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ author: $('Prepare Post Data').first().json.organization_urn, lifecycleState: 'PUBLISHED', visibility: 'PUBLIC', distribution: { feedDistribution: 'MAIN_FEED', targetEntities: [], thirdPartyDistributionChannels: [] }, content: { media: { id: $('Register Image Upload').first().json.value.asset } }, commentary: $('Prepare Post Data').first().json.content }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "name": "Create LinkedIn Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2010,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "linkedin-oauth2-header",
+          "name": "LinkedIn OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $('Prepare Post Data').first().json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "Publie",
+            "date_publication_reelle": "={{ $now.toISO() }}",
+            "lien_post_linkedin": "={{ 'https://www.linkedin.com/feed/update/' + $json.id }}",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "name": "Update Post Publie",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2230,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "client@rapidpub.fr",
+        "subject": "=✅ Post LinkedIn publié : {{ $('Prepare Post Data').first().json.titre }}",
+        "emailType": "html",
+        "message": "=<h2>🎉 Post LinkedIn publié avec succès !</h2>\n\n<p><strong>Titre :</strong> {{ $('Prepare Post Data').first().json.titre }}</p>\n<p><strong>Date :</strong> {{ $now.format('DD/MM/YYYY HH:mm') }}</p>\n\n<p>\n  <a href=\"https://www.linkedin.com/feed/update/{{ $('Create LinkedIn Post').first().json.id }}\" \n     style=\"background: #E94E1B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;\">\n    Voir le post sur LinkedIn\n  </a>\n</p>\n\n<hr>\n<p style=\"color: #666; font-size: 12px;\">\n  Rapid Pub - Gestionnaire de posts LinkedIn\n</p>",
+        "options": {}
+      },
+      "name": "Send Success Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2450,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "create",
+        "tableId": "workflow_logs",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date_execution": "={{ $now.toISO() }}",
+            "statut": "Succes",
+            "posts_generes": 1,
+            "erreurs": null
+          }
+        }
+      },
+      "name": "Log Success",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2670,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    message: 'Aucun post à publier pour ce créneau.',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "name": "Log Nothing to Publish",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        910,
+        420
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        910,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.first().json;\n\n// Try to get post_id from earlier nodes\nlet postId = 'unknown';\nlet titre = 'Inconnu';\ntry {\n  postId = $('Prepare Post Data').first().json?.post_id || 'unknown';\n  titre = $('Prepare Post Data').first().json?.titre || 'Inconnu';\n} catch (e) {\n  // Prepare Post Data may not have run yet\n}\n\nreturn {\n  json: {\n    post_id: postId,\n    titre: titre,\n    error_message: error.message || 'Erreur lors de la publication LinkedIn',\n    error_details: JSON.stringify(error, null, 2),\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "Erreur_Publication",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "name": "Update Status Erreur",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1350,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "client@rapidpub.fr",
+        "subject": "=⚠️ Erreur publication LinkedIn : {{ $('Error Handler').first().json.titre }}",
+        "emailType": "html",
+        "message": "=<h2>⚠️ Erreur lors de la publication</h2>\n\n<p><strong>Post :</strong> {{ $('Error Handler').first().json.titre }}</p>\n<p><strong>Erreur :</strong> {{ $('Error Handler').first().json.error_message }}</p>\n<p><strong>Date :</strong> {{ $now.format('DD/MM/YYYY HH:mm') }}</p>\n\n<p>Le statut du post a été mis à jour en <strong>Erreur_Publication</strong>. Vous pouvez relancer la publication manuellement depuis n8n.</p>\n\n<hr>\n<p style=\"color: #666; font-size: 12px;\">\n  Si l'erreur persiste, vérifiez les credentials LinkedIn dans n8n.\n</p>",
+        "options": {}
+      },
+      "name": "Send Error Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1570,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "create",
+        "tableId": "workflow_logs",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date_execution": "={{ $now.toISO() }}",
+            "statut": "Erreur",
+            "posts_generes": 0,
+            "erreurs": "={{ $('Error Handler').first().json.error_message }}"
+          }
+        }
+      },
+      "name": "Log Error",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1790,
+        600
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Posts to Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Posts to Publish": {
+      "main": [
+        [
+          {
+            "node": "IF Posts Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Posts Found": {
+      "main": [
+        [
+          {
+            "node": "Loop Each Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Nothing to Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Each Post": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Prepare Post Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Post Data": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Register Image Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Image Upload": {
+      "main": [
+        [
+          {
+            "node": "Upload Image Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image Binary": {
+      "main": [
+        [
+          {
+            "node": "Create LinkedIn Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create LinkedIn Post": {
+      "main": [
+        [
+          {
+            "node": "Update Post Publie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Post Publie": {
+      "main": [
+        [
+          {
+            "node": "Send Success Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Success Email": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Success": {
+      "main": [
+        [
+          {
+            "node": "Loop Each Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Update Status Erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status Erreur": {
+      "main": [
+        [
+          {
+            "node": "Send Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Error Email": {
+      "main": [
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Paris"
+  },
+  "staticData": null,
+  "tags": []
+}

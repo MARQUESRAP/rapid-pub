@@ -1,0 +1,155 @@
+{
+  "name": "Workflow 2b - Restaurer Image Précédente",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "restore-image",
+        "responseMode": "lastNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "restore-image"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "getAll",
+        "tableId": "posts",
+        "returnAll": false,
+        "limit": 1,
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $json.post_id }}"
+            }
+          ]
+        }
+      },
+      "name": "Get Post from Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\n\n// Vérifier image_precedente existe\nif (!post.image_precedente) {\n  throw new Error('Aucune image précédente disponible');\n}\n\nreturn {\n  json: {\n    post_id: post.id,\n    image_url: post.image_precedente\n  }\n};"
+      },
+      "name": "Check & Restore",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "image_url": "={{ $json.image_url }}",
+            "image_precedente": null,
+            "statut": "a_valider",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "name": "Update Post",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        910,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: true,\n    message: 'Image précédente restaurée'\n  }\n};"
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Post from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post from Supabase": {
+      "main": [
+        [
+          {
+            "node": "Check & Restore",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check & Restore": {
+      "main": [
+        [
+          {
+            "node": "Update Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Post": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": []
+}

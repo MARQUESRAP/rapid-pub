@@ -1,0 +1,723 @@
+{
+  "name": "LinkedIn Promo Generator RapidPub",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtDay": 3
+            }
+          ]
+        },
+        "options": {
+          "timezone": "Europe/Paris"
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300],
+      "notes": "Declenchement hebdomadaire - Mercredi 9h"
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 500],
+      "notes": "Pour tests manuels"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "getAll",
+        "tableId": "produits_promo",
+        "returnAll": false,
+        "limit": 1,
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "statut",
+              "condition": "equals",
+              "keyValue": "A_Poster"
+            }
+          ]
+        },
+        "additionalFields": {
+          "order": "priorite.asc,created_at.asc"
+        }
+      },
+      "id": "get-produit",
+      "name": "Get Produit A_Poster",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [450, 400],
+      "notes": "Recupere le premier produit a traiter"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "number": [
+            {
+              "value1": "={{ $input.all().length }}",
+              "operation": "largerEqual",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "id": "if-produit-found",
+      "name": "IF Produit Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [670, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    message: 'Aucun produit A_Poster trouve.',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "no-produit-log",
+      "name": "Log No Produit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [890, 550],
+      "notes": "Aucun produit a traiter"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url_image }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "download-image",
+      "name": "Download Image Produit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [890, 300],
+      "notes": "Telecharge l'image catalogue du produit"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en analyse de produits promotionnels/goodies.\n\nAnalyse cette image de produit et identifie :\n\n1. TYPE_PRODUIT : Quel type de produit c'est exactement (stylo, mug, gobelet, briquet, carnet, cle USB, t-shirt, casquette, sac, porte-cles, etc.)\n\n2. COULEUR_PRINCIPALE : La couleur dominante du produit\n\n3. COULEURS_SECONDAIRES : Autres couleurs visibles\n\n4. MATERIAU_APPARENT : Le materiau (plastique, metal, ceramique, tissu, verre, bois...)\n\n5. CARACTERISTIQUES : Particularites visuelles (logo, texte, forme speciale, finition mate/brillante...)\n\n6. TAILLE_ESTIMEE : Estimation de la taille (petit objet de poche, objet de bureau, grand objet...)\n\nReponds UNIQUEMENT en JSON valide :\n{\n  \"type_produit\": \"\",\n  \"couleur_principale\": \"\",\n  \"couleurs_secondaires\": [],\n  \"materiau\": \"\",\n  \"caracteristiques\": [],\n  \"taille\": \"\",\n  \"contexte_utilisation_suggere\": \"\"\n}",
+              "role": "system"
+            },
+            {
+              "content": {
+                "type": "image",
+                "image": "={{ $binary.data }}"
+              }
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 1000,
+          "temperature": 0.3
+        }
+      },
+      "id": "analyse-produit",
+      "name": "Analyse Produit (Claude Vision)",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [1110, 300],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      },
+      "notes": "Analyse l'image pour identifier le type, couleur, materiau"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst produit = $('Get Produit A_Poster').first().json;\n\n// Parser la reponse JSON de l'analyse\nlet analyse;\ntry {\n  // Extraire le JSON de la reponse (peut etre dans message.content ou directement)\n  const content = input.message?.content || (Array.isArray(input.content) ? input.content[0].text : input.content) || input.text || JSON.stringify(input);\n  // Nettoyer le contenu (enlever les balises markdown si presentes)\n  const cleanContent = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  analyse = JSON.parse(cleanContent);\n} catch (e) {\n  analyse = {\n    type_produit: produit.categorie || 'produit',\n    couleur_principale: 'inconnue',\n    couleurs_secondaires: [],\n    materiau: 'inconnu',\n    caracteristiques: [],\n    taille: 'standard',\n    contexte_utilisation_suggere: 'bureau'\n  };\n}\n\nreturn {\n  json: {\n    produit_id: produit.id,\n    reference: produit.reference,\n    nom_produit: produit.nom_produit,\n    categorie: produit.categorie,\n    url_image: produit.url_image,\n    analyse: analyse\n  }\n};"
+      },
+      "id": "parse-analyse",
+      "name": "Parse Analyse JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1330, 300],
+      "notes": "Parse et structure les donnees d'analyse"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en direction artistique et photographie de produits pour le e-commerce B2B.\n\nCHARTE GRAPHIQUE RAPID PUB :\n- Orange principal : #E94E1B\n- Vert accent : #A4C639\n- Style : Moderne, dynamique, professionnel B2B\n\nOBJECTIF : Generer un prompt pour Flux Kontext qui va transformer cette image de produit sur fond blanc en une mise en situation professionnelle et attrayante.\n\nREGLES :\n1. Le produit doit rester EXACTEMENT identique (Flux Kontext le garde intact)\n2. Le contexte doit etre coherent avec l'utilisation du produit\n3. L'ambiance doit etre professionnelle, lumineuse, moderne\n4. Eviter les contextes trop charges qui detournent l'attention du produit\n5. Inclure subtilement les couleurs Rapid Pub si possible (elements orange/vert en arriere-plan)\n\nEXEMPLES DE CONTEXTES PAR TYPE :\n- Stylo -> Bureau moderne avec carnet, lumiere naturelle\n- Mug -> Cuisine moderne ou bureau, vapeur de cafe\n- Gobelet -> Bureau, salle de reunion, espace de coworking\n- Briquet -> Table de terrasse, ambiance exterieure\n- Carnet -> Bureau creatif, avec plante et cafe\n- Cle USB -> Bureau tech, ecran en arriere-plan flou\n- T-shirt -> Porte par silhouette floue ou pose sur surface design\n- Sac -> Hall d'entreprise moderne, pose sur banquette\n\nREPONDS UNIQUEMENT en JSON valide :\n{\n  \"prompt_flux_kontext\": \"Description detaillee en ANGLAIS pour Flux Kontext, gardant le produit intact mais ajoutant un contexte professionnel...\",\n  \"contexte_choisi\": \"Bureau moderne / Terrasse / etc.\",\n  \"elements_arriere_plan\": [\"element 1\", \"element 2\"],\n  \"ambiance_lumiere\": \"Description de l'eclairage\",\n  \"justification\": \"Pourquoi ce contexte est pertinent pour ce produit\"\n}",
+              "role": "system"
+            },
+            {
+              "content": "PRODUIT ANALYSE :\n{{ JSON.stringify($json.analyse, null, 2) }}\n\nNom du produit : {{ $json.nom_produit }}\nCategorie : {{ $json.categorie }}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 1500,
+          "temperature": 0.7
+        }
+      },
+      "id": "generate-prompt",
+      "name": "Generate Prompt Flux Kontext",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [1550, 300],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      },
+      "notes": "Genere le prompt de mise en situation pour Flux Kontext"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst prevData = $('Parse Analyse JSON').first().json;\n\n// Parser la reponse JSON du prompt\nlet promptData;\ntry {\n  const content = input.message?.content || (Array.isArray(input.content) ? input.content[0].text : input.content) || input.text || JSON.stringify(input);\n  const cleanContent = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  promptData = JSON.parse(cleanContent);\n} catch (e) {\n  // Fallback si parsing echoue\n  promptData = {\n    prompt_flux_kontext: `Professional product photography of a ${prevData.analyse.type_produit} on a modern office desk with natural lighting, blurred background with subtle orange and green accent colors, clean minimalist style, high quality commercial photography`,\n    contexte_choisi: 'Bureau moderne',\n    elements_arriere_plan: ['desk', 'natural light'],\n    ambiance_lumiere: 'Natural daylight',\n    justification: 'Contexte professionnel standard'\n  };\n}\n\nreturn {\n  json: {\n    ...prevData,\n    prompt_flux_kontext: promptData.prompt_flux_kontext,\n    contexte_choisi: promptData.contexte_choisi,\n    elements_arriere_plan: promptData.elements_arriere_plan,\n    ambiance_lumiere: promptData.ambiance_lumiere,\n    justification_contexte: promptData.justification\n  }\n};"
+      },
+      "id": "parse-prompt",
+      "name": "Parse Prompt JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1770, 300],
+      "notes": "Parse le prompt genere"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/flux-pro/kontext",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ prompt: $json.prompt_flux_kontext, image_url: $json.url_image, guidance_scale: 7.5, num_inference_steps: 28, output_format: 'png' }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "flux-kontext",
+      "name": "Fal.ai Flux Kontext",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1990, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "WIbk16kRxy9Y9vsZ",
+          "name": "Fal.ai API"
+        }
+      },
+      "notes": "Transforme l'image produit en mise en situation"
+    },
+    {
+      "parameters": {
+        "jsCode": "const falResponse = $input.first().json;\nconst prevData = $('Parse Prompt JSON').first().json;\n\n// Extraire l'URL de l'image generee par Fal.ai\nlet imageUrl;\nif (falResponse.images && falResponse.images.length > 0) {\n  imageUrl = falResponse.images[0].url;\n} else if (falResponse.image) {\n  imageUrl = falResponse.image.url || falResponse.image;\n} else if (falResponse.output) {\n  imageUrl = falResponse.output;\n} else {\n  // Fallback: utiliser l'image originale\n  imageUrl = prevData.url_image;\n}\n\nreturn {\n  json: {\n    ...prevData,\n    image_transformee_url_temp: imageUrl,\n    flux_kontext_success: imageUrl !== prevData.url_image\n  }\n};"
+      },
+      "id": "parse-fal-response",
+      "name": "Parse Fal Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2210, 300],
+      "notes": "Extrait l'URL de l'image transformee"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dcxj1nknb/image/upload",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "value": "={{ $json.image_transformee_url_temp }}"
+            },
+            {
+              "name": "upload_preset",
+              "value": "rapid-pub-linkedin"
+            },
+            {
+              "name": "folder",
+              "value": "promo"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "cloudinary-upload",
+      "name": "Upload to Cloudinary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2430, 300],
+      "notes": "Upload l'image transformee sur Cloudinary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cloudinaryResponse = $input.first().json;\nconst prevData = $('Parse Fal Response').first().json;\n\nreturn {\n  json: {\n    ...prevData,\n    image_transformee_url: cloudinaryResponse.secure_url || cloudinaryResponse.url,\n    cloudinary_public_id: cloudinaryResponse.public_id\n  }\n};"
+      },
+      "id": "parse-cloudinary",
+      "name": "Parse Cloudinary Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2650, 300],
+      "notes": "Extrait l'URL Cloudinary finale"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en copywriting LinkedIn pour Rapid Pub, imprimerie B2B specialisee dans les goodies et objets publicitaires personnalises.\n\nOBJECTIF : Creer un post LinkedIn promotionnel qui met en valeur ce produit de maniere engageante, sans etre trop \"vendeur\" ou pushy.\n\nREGLES DE REDACTION :\n1. Hook percutant (emoji + phrase qui arrete le scroll)\n2. Mettre en avant les BENEFICES pour le client B2B (pas juste les caracteristiques)\n3. Inclure un element de preuve sociale ou de credibilite si possible\n4. CTA qui invite a l'echange (pas juste \"contactez-nous\")\n5. 4-6 hashtags pertinents\n6. Ton : Professionnel mais accessible, pas corporate ennuyeux\n7. Longueur : 600-1000 caracteres\n\nANGLES POSSIBLES :\n- L'objet comme outil de fidelisation client\n- Le cadeau d'entreprise qui marque les esprits\n- L'objet du quotidien qui rappelle votre marque\n- Le goodies evenementiel parfait\n- La personnalisation qui fait la difference\n\nREPONDS UNIQUEMENT en JSON valide :\n{\n  \"hook\": \"Premiere ligne avec emoji\",\n  \"corps\": \"Corps du post avec sauts de ligne (utiliser \\n\\n pour les paragraphes)...\",\n  \"cta\": \"Question ou invitation a l'echange\",\n  \"hashtags\": \"#goodies #objetspub #B2B #communication #marquage\",\n  \"angle_choisi\": \"L'angle utilise pour ce post\"\n}",
+              "role": "system"
+            },
+            {
+              "content": "PRODUIT A PROMOUVOIR :\n- Nom : {{ $json.nom_produit }}\n- Categorie : {{ $json.categorie }}\n- Reference : {{ $json.reference }}\n- Analyse : {{ JSON.stringify($json.analyse, null, 2) }}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.8
+        }
+      },
+      "id": "generate-post",
+      "name": "Generate Post LinkedIn",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [2870, 300],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      },
+      "notes": "Genere le texte du post LinkedIn"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst prevData = $('Parse Cloudinary Response').first().json;\n\n// Parser la reponse JSON du post\nlet postData;\ntry {\n  const content = input.message?.content || (Array.isArray(input.content) ? input.content[0].text : input.content) || input.text || JSON.stringify(input);\n  const cleanContent = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  postData = JSON.parse(cleanContent);\n} catch (e) {\n  // Fallback si parsing echoue\n  postData = {\n    hook: `\\uD83C\\uDF1F Decouvrez notre ${prevData.nom_produit} !`,\n    corps: `Un ${prevData.analyse.type_produit} de qualite pour vos campagnes de communication.\\n\\nPersonnalisez-le aux couleurs de votre entreprise pour un impact maximal aupres de vos clients et collaborateurs.`,\n    cta: 'Quel goodies fera la difference pour votre prochaine campagne ?',\n    hashtags: '#goodies #objetspub #B2B #communication #rapidpub',\n    angle_choisi: 'Presentation produit standard'\n  };\n}\n\nreturn {\n  json: {\n    produit_id: prevData.produit_id,\n    reference_produit: prevData.reference,\n    nom_produit: prevData.nom_produit,\n    categorie_produit: prevData.categorie,\n    hook: postData.hook,\n    corps: postData.corps,\n    cta: postData.cta,\n    hashtags: postData.hashtags,\n    image_originale_url: prevData.url_image,\n    image_transformee_url: prevData.image_transformee_url,\n    prompt_transformation: prevData.prompt_flux_kontext,\n    analyse_produit: prevData.analyse,\n    angle_choisi: postData.angle_choisi,\n    contexte_image: prevData.contexte_choisi\n  }\n};"
+      },
+      "id": "prepare-insert",
+      "name": "Prepare Insert Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3090, 300],
+      "notes": "Prepare les donnees pour insertion Supabase"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "create",
+        "tableId": "posts_promo",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "produit_id": "={{ $json.produit_id }}",
+            "reference_produit": "={{ $json.reference_produit }}",
+            "nom_produit": "={{ $json.nom_produit }}",
+            "categorie_produit": "={{ $json.categorie_produit }}",
+            "hook": "={{ $json.hook }}",
+            "corps": "={{ $json.corps }}",
+            "cta": "={{ $json.cta }}",
+            "hashtags": "={{ $json.hashtags }}",
+            "image_originale_url": "={{ $json.image_originale_url }}",
+            "image_transformee_url": "={{ $json.image_transformee_url }}",
+            "prompt_transformation": "={{ $json.prompt_transformation }}",
+            "analyse_produit": "={{ JSON.stringify($json.analyse_produit) }}",
+            "statut": "A_Valider"
+          }
+        }
+      },
+      "id": "insert-post-promo",
+      "name": "Insert Post Promo",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3310, 300],
+      "notes": "Cree l'entree dans posts_promo"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "produits_promo",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $('Prepare Insert Data').first().json.produit_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "En_Cours"
+          }
+        }
+      },
+      "id": "update-produit-status",
+      "name": "Update Produit Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3530, 300],
+      "notes": "Met a jour le statut du produit source"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "create",
+        "tableId": "workflow_logs",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "LinkedIn Promo Generator",
+            "date_execution": "={{ $now.toISO() }}",
+            "statut": "Succes",
+            "posts_generes": 1,
+            "details": "={{ JSON.stringify({ produit: $('Prepare Insert Data').first().json.nom_produit, reference: $('Prepare Insert Data').first().json.reference_produit }) }}"
+          }
+        }
+      },
+      "id": "log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3750, 300],
+      "notes": "Log de succes"
+    },
+    {
+      "parameters": {},
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [1990, 550]
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.first().json;\n\n// Essayer de recuperer les infos produit\nlet produitInfo = {};\ntry {\n  const produit = $('Get Produit A_Poster').first().json;\n  produitInfo = {\n    produit_id: produit?.id || 'unknown',\n    nom_produit: produit?.nom_produit || 'Inconnu',\n    reference: produit?.reference || 'N/A'\n  };\n} catch (e) {\n  produitInfo = {\n    produit_id: 'unknown',\n    nom_produit: 'Inconnu',\n    reference: 'N/A'\n  };\n}\n\nreturn {\n  json: {\n    ...produitInfo,\n    error_message: error.message || 'Erreur inconnue lors de la generation promo',\n    error_details: JSON.stringify(error, null, 2),\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "error-handler",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2210, 550],
+      "notes": "Gestion des erreurs"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "create",
+        "tableId": "workflow_logs",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "LinkedIn Promo Generator",
+            "date_execution": "={{ $now.toISO() }}",
+            "statut": "Erreur",
+            "posts_generes": 0,
+            "erreurs": "={{ $json.error_message }}",
+            "details": "={{ JSON.stringify({ produit: $json.nom_produit, reference: $json.reference, error: $json.error_details }) }}"
+          }
+        }
+      },
+      "id": "log-error",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2430, 550],
+      "notes": "Log de l'erreur"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Produit A_Poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Produit A_Poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Produit A_Poster": {
+      "main": [
+        [
+          {
+            "node": "IF Produit Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Produit Found": {
+      "main": [
+        [
+          {
+            "node": "Download Image Produit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log No Produit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image Produit": {
+      "main": [
+        [
+          {
+            "node": "Analyse Produit (Claude Vision)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse Produit (Claude Vision)": {
+      "main": [
+        [
+          {
+            "node": "Parse Analyse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Analyse JSON": {
+      "main": [
+        [
+          {
+            "node": "Generate Prompt Flux Kontext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Prompt Flux Kontext": {
+      "main": [
+        [
+          {
+            "node": "Parse Prompt JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Prompt JSON": {
+      "main": [
+        [
+          {
+            "node": "Fal.ai Flux Kontext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fal.ai Flux Kontext": {
+      "main": [
+        [
+          {
+            "node": "Parse Fal Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Fal Response": {
+      "main": [
+        [
+          {
+            "node": "Upload to Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Parse Cloudinary Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Cloudinary Response": {
+      "main": [
+        [
+          {
+            "node": "Generate Post LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Post LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Prepare Insert Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Insert Data": {
+      "main": [
+        [
+          {
+            "node": "Insert Post Promo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Post Promo": {
+      "main": [
+        [
+          {
+            "node": "Update Produit Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Produit Status": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Paris",
+    "errorWorkflow": "",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "RapidPub",
+      "id": "rapidpub"
+    },
+    {
+      "name": "LinkedIn",
+      "id": "linkedin"
+    },
+    {
+      "name": "Promo",
+      "id": "promo"
+    }
+  ],
+  "pinData": {},
+  "versionId": "1",
+  "meta": {
+    "instanceId": "rapidpub-n8n"
+  }
+}

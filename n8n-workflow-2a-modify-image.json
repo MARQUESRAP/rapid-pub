@@ -1,0 +1,446 @@
+{
+  "name": "Workflow 2a - Modification Image LinkedIn",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "modify-image",
+        "responseMode": "responseOnReceived",
+        "responseCode": 200,
+        "responseData": "={{ { \"status\": \"processing\", \"message\": \"Modification en cours, l'image sera mise à jour automatiquement\" } }}"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "modify-image"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "getAll",
+        "tableId": "posts",
+        "returnAll": false,
+        "limit": 1,
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $json.post_id }}"
+            }
+          ]
+        }
+      },
+      "name": "Get Post from Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\nconst webhookData = $('Webhook').first().json;\n\nreturn {\n  json: {\n    post_id: post.id,\n    current_image_url: post.image_url,\n    current_prompt_image: post.prompt_image || '',\n    image_precedente: post.image_url,\n    user_prompt: webhookData.prompt,\n    // Context for prompt enrichment\n    titre: post.titre_interne || '',\n    categorie: post.categorie || '',\n    hook: post.hook || ''\n  }\n};"
+      },
+      "name": "Save Previous Image URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "Modification_En_Cours"
+          }
+        }
+      },
+      "name": "Set Status Modification_En_Cours",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        910,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en génération de prompts pour Nano Banana Pro (Gemini 3 Pro Image), le modèle d'IA de génération d'images de Google.\n\nTa mission : Transformer une demande simple de l'utilisateur en un prompt détaillé et technique pour modifier une image existante.\n\nAVANTAGES DE NANO BANANA PRO :\n- Excellent pour le texte dans les images\n- Comprend le contexte et le raisonnement\n- Peut produire jusqu'à 4K de résolution\n- Excellent pour maintenir la cohérence visuelle\n\nCHARTE GRAPHIQUE RAPID PUB (à inclure SI l'utilisateur ne mentionne pas de couleurs spécifiques) :\n- Couleur principale : Orange vif #E94E1B\n- Couleur accent : Vert lime #A4C639\n- Style : Flat design moderne avec touches 3D subtiles\n- Éléments signature : Petits carrés/pixels dispersés (effet digital/vitesse)\n- Ambiance : Dynamique, professionnelle, accessible\n\nRÈGLES :\n1. Le prompt doit être en ANGLAIS (meilleure compréhension)\n2. Nano Banana Pro comprend les instructions complexes - sois détaillé\n3. Inclure des détails techniques : style, éclairage, composition\n4. Si l'utilisateur mentionne des couleurs, respecter son choix\n5. Si l'utilisateur ne mentionne PAS de couleurs, inclure la charte Rapid Pub\n6. Tu peux demander des modifications précises (ex: \"change the background to...\", \"add orange accent colors to...\")\n7. Spécifie le style visuel souhaité (flat design, modern, professional, etc.)\n\nFORMAT DE SORTIE OBLIGATOIRE (JSON) :\n{\n  \"prompt_nano_banana\": \"Prompt détaillé en anglais pour Nano Banana Pro\",\n  \"resolution\": \"2K\",\n  \"aspect_ratio\": \"1:1\",\n  \"justification\": \"Explication courte des modifications demandées\"\n}\n\nRÉSOLUTIONS DISPONIBLES : \"1K\", \"2K\", \"4K\" (utilise 2K par défaut pour LinkedIn)\nASPECT RATIOS : \"1:1\", \"4:3\", \"3:2\", \"16:9\", \"9:16\", \"3:4\", \"2:3\", \"5:4\", \"4:5\", \"21:9\"",
+              "role": "system"
+            },
+            {
+              "content": "CONTEXTE DU POST LINKEDIN :\n- Titre : {{ $json.titre }}\n- Catégorie : {{ $json.categorie }}\n- Hook : {{ $json.hook }}\n\nPROMPT ORIGINAL DE L'IMAGE :\n{{ $json.current_prompt_image }}\n\n---\n\nDEMANDE DE MODIFICATION DE L'UTILISATEUR :\n{{ $json.user_prompt }}\n\n---\n\nGénère un prompt enrichi pour Nano Banana Pro qui modifie l'image selon la demande. L'image sera utilisée pour un post LinkedIn professionnel B2B.\nRéponds uniquement en JSON valide."
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.7
+        }
+      },
+      "name": "Claude Enrich Prompt",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1130,
+        300
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst previousData = $('Save Previous Image URL').first().json;\n\n// Extract content from Anthropic response\nlet content = response.message?.content || (Array.isArray(response.content) ? response.content[0].text : response.content) || response.text;\n\n// Clean markdown wrapping if present\nif (typeof content === 'string') {\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  try {\n    content = JSON.parse(content);\n  } catch (error) {\n    throw new Error('Claude did not return valid JSON: ' + content);\n  }\n}\n\nreturn {\n  json: {\n    post_id: previousData.post_id,\n    current_image_url: previousData.current_image_url,\n    image_precedente: previousData.image_precedente,\n    prompt_nano_banana: content.prompt_nano_banana,\n    resolution: content.resolution || '2K',\n    aspect_ratio: content.aspect_ratio || '1:1',\n    justification: content.justification\n  }\n};"
+      },
+      "name": "Parse Enriched Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/gemini-3-pro-image-preview/edit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.prompt_nano_banana }}"
+            },
+            {
+              "name": "image_urls",
+              "value": "={{ [$json.current_image_url] }}"
+            },
+            {
+              "name": "resolution",
+              "value": "={{ $json.resolution }}"
+            },
+            {
+              "name": "aspect_ratio",
+              "value": "={{ $json.aspect_ratio }}"
+            },
+            {
+              "name": "num_images",
+              "value": 1
+            },
+            {
+              "name": "output_format",
+              "value": "png"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Nano Banana Pro Image-to-Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1570,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fal-ai-header-auth",
+          "name": "Fal.ai API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dcxj1nknb/image/upload",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "value": "={{ $json.images[0].url }}"
+            },
+            {
+              "name": "upload_preset",
+              "value": "rapid-pub-linkedin"
+            },
+            {
+              "name": "folder",
+              "value": "rapid-pub/linkedin-posts"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "name": "Upload to Cloudinary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1790,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $('Parse Enriched Prompt').first().json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "image_url": "={{ $json.secure_url }}",
+            "prompt_image": "={{ $('Parse Enriched Prompt').first().json.prompt_nano_banana }}",
+            "image_precedente": "={{ $('Parse Enriched Prompt').first().json.image_precedente }}",
+            "statut": "a_valider",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "name": "Update Post in Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2010,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        690,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.first().json;\nconst postId = $('Save Previous Image URL').first().json?.post_id || 'unknown';\n\nconsole.error('Workflow error:', error);\n\nreturn {\n  json: {\n    post_id: postId,\n    error_message: error.message || 'Erreur lors de la modification de l\\'image',\n    error_details: JSON.stringify(error, null, 2),\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        910,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "a_valider"
+          }
+        }
+      },
+      "name": "Rollback Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1130,
+        520
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Post from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post from Supabase": {
+      "main": [
+        [
+          {
+            "node": "Save Previous Image URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Previous Image URL": {
+      "main": [
+        [
+          {
+            "node": "Set Status Modification_En_Cours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Status Modification_En_Cours": {
+      "main": [
+        [
+          {
+            "node": "Claude Enrich Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Enrich Prompt": {
+      "main": [
+        [
+          {
+            "node": "Parse Enriched Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Enriched Prompt": {
+      "main": [
+        [
+          {
+            "node": "Nano Banana Pro Image-to-Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nano Banana Pro Image-to-Image": {
+      "main": [
+        [
+          {
+            "node": "Upload to Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Update Post in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Rollback Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": []
+}

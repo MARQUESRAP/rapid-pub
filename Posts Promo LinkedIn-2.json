@@ -1,0 +1,795 @@
+{
+  "name": "Posts Promo LinkedIn",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "0dfb1f06-e01d-41ed-9572-22db9b6de79f",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        -160
+      ],
+      "disabled": true,
+      "notes": "Declenchement hebdomadaire - Mercredi 9h"
+    },
+    {
+      "parameters": {},
+      "id": "533a4f0a-5659-4030-8d47-a957adabe5f2",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        208,
+        48
+      ],
+      "notes": "Pour tests manuels"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "produits_promo",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "statut",
+              "condition": "eq",
+              "keyValue": "A_Poster"
+            }
+          ]
+        }
+      },
+      "id": "f6026dc8-86d7-4de1-bb92-b68d44c5fb62",
+      "name": "Get Produit A_Poster",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -64
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "Recupere le premier produit a traiter"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "number": [
+            {
+              "value1": "={{ $input.all().length }}",
+              "operation": "largerEqual",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "id": "fa35bbf6-6f79-499b-905f-b0e34a927f46",
+      "name": "IF Produit Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        688,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    message: 'Aucun produit A_Poster trouve.',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "d62931ef-efff-4caa-af73-7a96e7989657",
+      "name": "Log No Produit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        96
+      ],
+      "notes": "Aucun produit a traiter"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en direction artistique et photographie de produits pour le e-commerce B2B.\n\nCHARTE GRAPHIQUE RAPID PUB :\n- Orange principal : #E94E1B\n- Vert accent : #A4C639\n- Style : Moderne, dynamique, professionnel B2B\n\nOBJECTIF : Générer un prompt ULTRA-DÉTAILLÉ pour Flux Kontext qui va transformer cette image de produit sur fond blanc en une mise en situation professionnelle et attrayante.\n\nRÈGLES :\n1. Le produit doit rester EXACTEMENT identique (Flux Kontext le garde intact)\n2. Le contexte doit être cohérent avec l'utilisation du produit\n3. L'ambiance doit être professionnelle, lumineuse, moderne\n4. Éviter les contextes trop chargés qui détournent l'attention du produit\n5. Inclure subtilement les couleurs Rapid Pub si possible (éléments orange/vert en arrière-plan)\n6. Le prompt Flux Kontext doit être en ANGLAIS\n7. IMPORTANT : Si des textes/écritures apparaissent dans la scène, ils doivent être en FRANÇAIS. Ajoute \"any visible text must be in French\" dans le prompt.\n\n⚠️ RÈGLE CRITIQUE - PROMPT ULTRA-DÉTAILLÉ :\nLe prompt DOIT contenir au minimum 80 mots et décrire PRÉCISÉMENT :\n- La SURFACE sur laquelle le produit est posé (matériau, couleur, texture)\n- Les OBJETS environnants (3-5 éléments contextuels précis)\n- L'ÉCLAIRAGE (type, direction, température de couleur)\n- L'ARRIÈRE-PLAN (flou ou net, éléments visibles, profondeur)\n- L'AMBIANCE GÉNÉRALE (mood, style photographique)\n- Les COULEURS DOMINANTES de la scène\n\n❌ MAUVAIS EXEMPLE (trop vague) :\n\"Product on a modern desk with natural lighting\"\n\n✅ BON EXEMPLE (détaillé) :\n\"A sleek blue aluminum bottle opener keychain elegantly placed on a polished dark oak bar counter with visible wood grain texture, surrounded by two craft beer bottles with fresh condensation droplets, a small bowl of salted peanuts, and a folded linen napkin in burnt orange color. Warm ambient lighting from vintage Edison pendant lamps creates soft golden highlights on the metal surface. Blurred background reveals a cozy upscale bar interior with exposed red brick walls, subtle green plant leaves on the left, and soft bokeh from distant warm lights. Professional product photography style, shallow depth of field f/2.8, commercial advertising quality, any visible text must be in French\"\n\nCONTEXTES SUGGÉRÉS PAR TYPE DE PRODUIT :\n- Décapsuleur/porte-clés → Bar élégant avec bouteilles, comptoir bois, ambiance chaleureuse\n- Stylo → Bureau executive avec carnet cuir, café fumant, plante verte, lumière fenêtre\n- Mug → Cuisine moderne avec machine à café, croissant, journal du matin, lumière douce\n- Briquet → Terrasse café parisien, table bistrot, cendrier vintage, fin d'après-midi dorée\n- Tour de cou/lanyard → Hall de conférence, badge visible, plantes vertes, sol marbre\n- Badge → Accueil d'entreprise moderne, comptoir blanc, écran, fleurs oranges\n- Gobelet → Salle de réunion lumineuse, documents, ordinateur portable, vue sur ville\n\nRÉPONDS UNIQUEMENT en JSON valide, sans markdown :\n{\n  \"prompt_flux_kontext\": \"Description ULTRA-DÉTAILLÉE en ANGLAIS (minimum 80 mots)...\",\n  \"contexte_choisi\": \"Nom du contexte\",\n  \"elements_arriere_plan\": [\"element 1\", \"element 2\", \"element 3\", \"element 4\", \"element 5\"],\n  \"ambiance_lumiere\": \"Description précise de l'éclairage\",\n  \"justification\": \"Pourquoi ce contexte est pertinent\"\n}",
+              "role": "system"
+            },
+            {
+              "content": "=PRODUIT À METTRE EN SITUATION :\n\nNom : {{ $('IF Produit Found').item.json.nom_produit }}\nCatégorie : {{ $('IF Produit Found').item.json.categorie }}\nCouleurs disponibles : {{ $('IF Produit Found').item.json.couleurs_dispo }}\n\nANALYSE VISUELLE DU PRODUIT :\n- Type identifié : {{ $json.type_produit }}\n- Couleur principale : {{ $json.couleur_principale }}\n- Couleurs secondaires : {{ $json.couleurs_secondaires }}\n- Matériau : {{ $json.materiau }}\n- Caractéristiques : {{ $json.caracteristiques }}\n- Taille : {{ $json.taille }}\n- Contexte d'utilisation suggéré : {{ $json.contexte_utilisation_suggere }}\n\nGénère le prompt Flux Kontext optimal pour ce produit."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 1500,
+          "temperature": 0.7
+        }
+      },
+      "id": "ef2fc672-fc41-4884-bbfc-649bab89c7c3",
+      "name": "Generate Prompt Flux Kontext",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -160
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      },
+      "notes": "Genere le prompt de mise en situation pour Flux Kontext"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Récupérer les données du produit\nconst produitData = $('IF Produit Found').first().json;\n\n// Récupérer l'analyse depuis \"Code in JavaScript\"\nconst analyseData = $('Code in JavaScript').first().json;\n\n// Parser la réponse JSON du prompt Flux Kontext\nlet promptData;\ntry {\n  // GPT avec jsonOutput: true retourne directement le JSON\n  if (input.prompt_flux_kontext) {\n    promptData = input;\n  } else {\n    const content = input.message?.content || (Array.isArray(input.content) ? input.content[0].text : input.content) || input.text || JSON.stringify(input);\n    const cleanContent = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n    promptData = JSON.parse(cleanContent);\n  }\n} catch (e) {\n  // Fallback si parsing échoue\n  promptData = {\n    prompt_flux_kontext: `Professional product photography of a ${analyseData.type_produit || 'product'} on a modern office desk with natural lighting, blurred background with subtle orange and green accent colors, clean minimalist style, high quality commercial photography, any visible text must be in French`,\n    contexte_choisi: 'Bureau moderne',\n    elements_arriere_plan: ['desk', 'natural light'],\n    ambiance_lumiere: 'Natural daylight',\n    justification: 'Contexte professionnel standard'\n  };\n}\n\nreturn {\n  json: {\n    // Données produit\n    id: produitData.id,\n    reference: produitData.reference,\n    nom_produit: produitData.nom_produit,\n    categorie: produitData.categorie,\n    url_image: produitData.url_image,\n    couleurs_dispo: produitData.couleurs_dispo,\n    \n    // Analyse du produit\n    analyse: {\n      type_produit: analyseData.type_produit,\n      couleur_principale: analyseData.couleur_principale,\n      couleurs_secondaires: analyseData.couleurs_secondaires || [],\n      materiau: analyseData.materiau,\n      caracteristiques: analyseData.caracteristiques || [],\n      taille: analyseData.taille,\n      contexte_utilisation_suggere: analyseData.contexte_utilisation_suggere\n    },\n    \n    // Prompt Flux Kontext\n    prompt_flux_kontext: promptData.prompt_flux_kontext,\n    contexte_choisi: promptData.contexte_choisi,\n    elements_arriere_plan: promptData.elements_arriere_plan || [],\n    ambiance_lumiere: promptData.ambiance_lumiere,\n    justification_contexte: promptData.justification\n  }\n};"
+      },
+      "id": "18b552a7-cd9d-470d-9e9f-0137f8b7590d",
+      "name": "Parse Prompt JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        -160
+      ],
+      "notes": "Parse le prompt genere"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/flux-pro/kontext",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.prompt_flux_kontext }}\",\n  \"image_url\": \"{{ $json.url_image }}\",\n  \"strength\": 0.95,\n  \"num_inference_steps\": 40,\n  \"guidance_scale\": 7.5,\n  \"output_format\": \"png\"\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "28420420-63b9-4e65-8b91-8dc3f187497f",
+      "name": "Fal.ai Flux Kontext",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1952,
+        -160
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gzFGtaoxzrlyP0vK",
+          "name": "Header Auth account"
+        }
+      },
+      "notes": "Transforme l'image produit en mise en situation"
+    },
+    {
+      "parameters": {
+        "jsCode": "const falResponse = $input.first().json;\nconst prevData = $('Parse Prompt JSON').first().json;\n\n// Extraire l'URL de l'image generee par Fal.ai\nlet imageUrl;\nif (falResponse.images && falResponse.images.length > 0) {\n  imageUrl = falResponse.images[0].url;\n} else if (falResponse.image) {\n  imageUrl = falResponse.image.url || falResponse.image;\n} else if (falResponse.output) {\n  imageUrl = falResponse.output;\n} else {\n  // Fallback: utiliser l'image originale\n  imageUrl = prevData.url_image;\n}\n\nreturn {\n  json: {\n    ...prevData,\n    image_transformee_url_temp: imageUrl,\n    flux_kontext_success: imageUrl !== prevData.url_image\n  }\n};"
+      },
+      "id": "bfc592e7-f481-46fc-8dca-a8b527d1e4ca",
+      "name": "Parse Fal Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        -160
+      ],
+      "notes": "Extrait l'URL de l'image transformee"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dcxj1nknb/image/upload",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "value": "={{ $json.image_transformee_url_temp }}"
+            },
+            {
+              "name": "upload_preset",
+              "value": "rapid-pub-linkedin"
+            },
+            {
+              "name": "folder",
+              "value": "promo"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "4caeb01d-aa8a-49c3-b8d3-de95a4908044",
+      "name": "Upload to Cloudinary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        -160
+      ],
+      "notes": "Upload l'image transformee sur Cloudinary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cloudinaryResponse = $input.first().json;\nconst prevData = $('Parse Fal Response').first().json;\n\nreturn {\n  json: {\n    ...prevData,\n    image_transformee_url: cloudinaryResponse.secure_url || cloudinaryResponse.url,\n    cloudinary_public_id: cloudinaryResponse.public_id\n  }\n};"
+      },
+      "id": "bf9a7e60-8188-467b-9194-0388ff06f2a6",
+      "name": "Parse Cloudinary Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        -160
+      ],
+      "notes": "Extrait l'URL Cloudinary finale"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en copywriting LinkedIn pour Rapid Pub, imprimerie B2B spécialisée dans les goodies et objets publicitaires personnalisés dans les Hauts-de-France.\n\nOBJECTIF : Créer un post LinkedIn promotionnel COURT et PERCUTANT.\n\nRÈGLES DE RÉDACTION :\n1. Hook percutant (emoji + phrase qui arrête le scroll) - MAX 125 caractères\n2. Mettre en avant les BÉNÉFICES clés en **gras** (ex: **personnalisable**, **durable**, **haute visibilité**)\n3. Mentionner **Rapid Pub** au moins une fois dans le post\n4. Post COURT et CONCIS : 400-600 caractères maximum (hook + corps + CTA inclus)\n5. CTA qui renvoie vers le commentaire : terminer par \"Lien en commentaire 👇\" ou \"Plus d'infos en commentaire 👇\"\n6. 4-6 hashtags pertinents (inclure #rapidpub)\n7. Ton : Professionnel mais accessible\n8. Espacer les paragraphes (2-3 lignes max par bloc)\n9. Aller droit au but : pas de storytelling long, pas de mise en situation élaborée\n\nSTRUCTURE IDÉALE :\n- Hook (1 ligne percutante avec emoji)\n- Bénéfices clés en **gras** (2-3 lignes max)\n- Mention Rapid Pub\n- CTA vers commentaire (\"Lien en commentaire 👇\")\n\nÉVITER :\n- Les superlatifs vides (\"le meilleur\", \"incroyable\")\n- Les posts trop longs ou narratifs\n- Le ton trop commercial/publicitaire\n- Les mises en situation longues\n\nRÉPONDS UNIQUEMENT en JSON valide, sans markdown :\n{\n  \"hook\": \"Première ligne avec emoji (max 125 car)\",\n  \"corps\": \"Corps du post COURT avec mots-clés en **gras** (utiliser \\\\n\\\\n pour les paragraphes)...\",\n  \"cta\": \"Phrase renvoyant vers le commentaire (ex: Lien en commentaire 👇)\",\n  \"hashtags\": \"#goodies #objetspub #B2B #communication #rapidpub\",\n  \"commentaire_lien\": \"Texte du premier commentaire incluant le lien https://www.rapid-pub.com (ex: Retrouvez ce produit et tous nos goodies personnalisables ici 👉 https://www.rapid-pub.com)\",\n  \"angle_choisi\": \"L'angle utilisé pour ce post\",\n  \"ton_utilise\": \"Descriptif du ton\"\n}",
+              "role": "system"
+            },
+            {
+              "content": "=PRODUIT À PROMOUVOIR :\n\nNom : {{ $json.nom_produit }}\nCatégorie : {{ $json.categorie }}\nRéférence : {{ $json.reference }}\nCouleurs disponibles : {{ $json.couleurs_dispo }}\n\nANALYSE VISUELLE :\n- Type : {{ $json.analyse.type_produit }}\n- Couleur principale : {{ $json.analyse.couleur_principale }}\n- Matériau : {{ $json.analyse.materiau }}\n- Caractéristiques : {{ $json.analyse.caracteristiques }}\n- Contexte d'utilisation : {{ $json.analyse.contexte_utilisation_suggere }}\n\nMISE EN SITUATION CRÉÉE :\n{{ $json.contexte_choisi }}\n\nGénère un post LinkedIn engageant pour ce produit."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.8
+        }
+      },
+      "id": "710ac840-92eb-4f7a-91f2-e97e3efdc1f9",
+      "name": "Generate Post LinkedIn",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        -160
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      },
+      "notes": "Genere le texte du post LinkedIn"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst prevData = $('Parse Cloudinary Response').first().json;\n\n// Récupérer le contenu du post\nlet postData;\n\n// Anthropic/GPT avec jsonOutput: true retourne content comme OBJET ou tableau directement\nif (input.message?.content && typeof input.message.content === 'object' && !Array.isArray(input.message.content)) {\n  // Content est déjà un objet JSON\n  postData = input.message.content;\n} else {\n  // Fallback : essayer de parser si c'est une string\n  try {\n    const content = input.message?.content || (Array.isArray(input.content) ? input.content[0].text : input.content) || input.text || JSON.stringify(input);\n    const cleanContent = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n    postData = JSON.parse(cleanContent);\n  } catch (e) {\n    // Fallback ultime si parsing échoue\n    postData = {\n      hook: `🌟 Découvrez notre ${prevData.nom_produit} !`,\n      corps: `Un ${prevData.analyse?.type_produit || 'produit'} de qualité pour vos campagnes de communication.\\n\\nPersonnalisez-le aux couleurs de votre entreprise pour un impact maximal auprès de vos clients et collaborateurs.`,\n      cta: 'Quel goodies fera la différence pour votre prochaine campagne ?',\n      hashtags: '#goodies #objetspub #B2B #communication #rapidpub',\n      angle_choisi: 'Présentation produit standard'\n    };\n  }\n}\n\nreturn {\n  json: {\n    produit_id: prevData.produit_id,\n    reference_produit: prevData.reference,\n    nom_produit: prevData.nom_produit,\n    categorie_produit: prevData.categorie,\n    hook: postData.hook,\n    corps: postData.corps,\n    cta: postData.cta,\n    hashtags: postData.hashtags,\n    image_originale_url: prevData.url_image,\n    image_transformee_url: prevData.image_transformee_url,\n    prompt_transformation: prevData.prompt_flux_kontext,\n    analyse_produit: prevData.analyse,\n    angle_choisi: postData.angle_choisi,\n    ton_utilise: postData.ton_utilise,\n    contexte_image: prevData.contexte_choisi,\n    commentaire_lien: postData.commentaire_lien || 'Découvrez ce produit et tous nos goodies personnalisables 👉 https://www.rapid-pub.com'\n  }\n};"
+      },
+      "id": "42077581-5a65-4ec0-82b8-9de506fc9cad",
+      "name": "Prepare Insert Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        -160
+      ],
+      "notes": "Prepare les donnees pour insertion Supabase"
+    },
+    {
+      "parameters": {
+        "tableId": "posts_promo",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "produit_id",
+              "fieldValue": "={{ $('Parse Cloudinary Response').item.json.id }}"
+            },
+            {
+              "fieldId": "reference_produit",
+              "fieldValue": "={{ $json.reference_produit }}"
+            },
+            {
+              "fieldId": "nom_produit",
+              "fieldValue": "={{ $json.nom_produit }}"
+            },
+            {
+              "fieldId": "categorie_produit",
+              "fieldValue": "={{ $json.categorie_produit }}"
+            },
+            {
+              "fieldId": "hook",
+              "fieldValue": "={{ $json.hook }}"
+            },
+            {
+              "fieldId": "corps",
+              "fieldValue": "={{ $json.corps }}"
+            },
+            {
+              "fieldId": "cta",
+              "fieldValue": "={{ $json.cta }}"
+            },
+            {
+              "fieldId": "hashtags",
+              "fieldValue": "={{ $json.hashtags }}"
+            },
+            {
+              "fieldId": "image_originale_url",
+              "fieldValue": "={{ $json.image_originale_url }}"
+            },
+            {
+              "fieldId": "image_transformee_url",
+              "fieldValue": "={{ $json.image_transformee_url }}"
+            },
+            {
+              "fieldId": "prompt_transformation",
+              "fieldValue": "={{ $json.prompt_transformation }}"
+            },
+            {
+              "fieldId": "analyse_produit",
+              "fieldValue": "={{ JSON.stringify($json.analyse_produit) }}"
+            },
+            {
+              "fieldId": "commentaire_lien",
+              "fieldValue": "={{ $json.commentaire_lien }}"
+            },
+            {
+              "fieldId": "statut",
+              "fieldValue": "A_Valider"
+            }
+          ]
+        }
+      },
+      "id": "5ababf5e-5ef3-4650-89dd-08bcae5b48c9",
+      "name": "Insert Post Promo",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3296,
+        -160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "Cree l'entree dans posts_promo"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "produits_promo",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.produit_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "En_Cours"
+            }
+          ]
+        }
+      },
+      "id": "d0a4bb83-0675-4cd0-8351-27b582d94e6f",
+      "name": "Update Produit Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3472,
+        -160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "Met a jour le statut du produit source"
+    },
+    {
+      "parameters": {
+        "tableId": "logs_workflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "Succes"
+            },
+            {
+              "fieldId": "date_execution",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "id": "2501b2ec-a372-4147-9d17-2a876cc8a091",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3648,
+        -160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "Log de succes"
+    },
+    {
+      "parameters": {},
+      "id": "f1868811-d827-47d6-b4af-9be57644f328",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.first().json;\n\n// Essayer de recuperer les infos produit\nlet produitInfo = {};\ntry {\n  const produit = $('Get Produit A_Poster').first().json;\n  produitInfo = {\n    produit_id: produit?.id || 'unknown',\n    nom_produit: produit?.nom_produit || 'Inconnu',\n    reference: produit?.reference || 'N/A'\n  };\n} catch (e) {\n  produitInfo = {\n    produit_id: 'unknown',\n    nom_produit: 'Inconnu',\n    reference: 'N/A'\n  };\n}\n\nreturn {\n  json: {\n    ...produitInfo,\n    error_message: error.message || 'Erreur inconnue lors de la generation promo',\n    error_details: JSON.stringify(error, null, 2),\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "727d5474-4a68-4e05-9e1f-bc5a0d3105a0",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        96
+      ],
+      "notes": "Gestion des erreurs"
+    },
+    {
+      "parameters": {
+        "tableId": "logs_workflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "Erreur"
+            }
+          ]
+        }
+      },
+      "id": "19331c7b-eda7-4dc0-aa9c-0661e5a0078e",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        96
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "Log de l'erreur"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"max_tokens\": 500,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es un expert en analyse de produits promotionnels/goodies. Réponds UNIQUEMENT en JSON valide, sans markdown, sans ```json.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Analyse cette image de produit et identifie :\\n\\n1. TYPE_PRODUIT : Quel type de produit c'est exactement (stylo, mug, gobelet, briquet, carnet, clé USB, t-shirt, casquette, sac, porte-clés, décapsuleur, tour de cou, badge, pastilles menthe, balle anti-stress, cutter, mètre-ruban, grattoir, mousqueton, disque stationnement, etc.)\\n\\n2. COULEUR_PRINCIPALE : La couleur dominante du produit\\n\\n3. COULEURS_SECONDAIRES : Autres couleurs visibles\\n\\n4. MATERIAU_APPARENT : Le matériau (plastique, métal, aluminium, céramique, tissu, verre, bois...)\\n\\n5. CARACTERISTIQUES : Particularités visuelles (logo, texte, forme spéciale, finition mate/brillante, anneau porte-clés...)\\n\\n6. TAILLE_ESTIMEE : Estimation de la taille (petit objet de poche, objet de bureau, grand objet...)\\n\\nRéponds en JSON :\\n{\\\"type_produit\\\": \\\"\\\", \\\"couleur_principale\\\": \\\"\\\", \\\"couleurs_secondaires\\\": [], \\\"materiau\\\": \\\"\\\", \\\"caracteristiques\\\": [], \\\"taille\\\": \\\"\\\", \\\"contexte_utilisation_suggere\\\": \\\"\\\"}\"\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"{{ $('Get Produit A_Poster').first().json.url_image }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        944,
+        -160
+      ],
+      "id": "f9834883-8d47-4f9b-babd-87b44aa4d0e5",
+      "name": "HTTP Request",
+      "credentials": {
+        "openAiApi": {
+          "id": "PLACEHOLDER",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dans un node Code\nconst response = $input.first().json;\nconst content = response.choices[0].message.content;\nconst analyse = JSON.parse(content);\n\nreturn { json: analyse };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -160
+      ],
+      "id": "7599f1f0-54b4-4d84-94f7-1332490d1ff2",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Produit A_Poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Produit A_Poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Produit A_Poster": {
+      "main": [
+        [
+          {
+            "node": "IF Produit Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Produit Found": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log No Produit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Prompt Flux Kontext": {
+      "main": [
+        [
+          {
+            "node": "Parse Prompt JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Prompt JSON": {
+      "main": [
+        [
+          {
+            "node": "Fal.ai Flux Kontext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fal.ai Flux Kontext": {
+      "main": [
+        [
+          {
+            "node": "Parse Fal Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Fal Response": {
+      "main": [
+        [
+          {
+            "node": "Upload to Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Parse Cloudinary Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Cloudinary Response": {
+      "main": [
+        [
+          {
+            "node": "Generate Post LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Post LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Prepare Insert Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Insert Data": {
+      "main": [
+        [
+          {
+            "node": "Insert Post Promo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Post Promo": {
+      "main": [
+        [
+          {
+            "node": "Update Produit Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Produit Status": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Generate Prompt Flux Kontext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1aca8d50-ac56-43ea-9cba-cd8a8c8baf53",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c68d0e75da974712b0aa88aaeec1176d721c357e16ef5838f19fd54163f6cbd7"
+  },
+  "id": "utdOkGn1c5XAuGnJ",
+  "tags": [
+    {
+      "updatedAt": "2026-02-02T16:12:00.859Z",
+      "createdAt": "2026-02-02T16:12:00.859Z",
+      "id": "Fj19eWa2ctdMfBWd",
+      "name": "RAPIDPUB"
+    }
+  ]
+}

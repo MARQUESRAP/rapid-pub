@@ -1,0 +1,1185 @@
+{
+  "name": "Publication LinkedIn",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Preparer Donnees Post').first().json.commentaire_lien }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "259027ff-8cbb-47b7-85cb-6f6d08103985",
+      "name": "SI Commentaire Lien",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        16,
+        704
+      ],
+      "notes": "Verifie si un commentaire avec lien est a poster"
+    },
+    {
+      "parameters": {
+        "amount": 45
+      },
+      "id": "5a4b1be3-05b8-4ffb-9d23-a1a04db03d21",
+      "name": "Attendre Avant Commentaire",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        704
+      ],
+      "webhookId": "4cc713db-9c71-4785-9113-707f0b05c6c2",
+      "notes": "Attendre 45s avant de poster le commentaire"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.linkedin.com/v2/socialActions/{{ encodeURIComponent($('Creer Post LinkedIn').first().json.id) }}/comments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"actor\": \"{{ $('Preparer Donnees Post').first().json.organization_urn }}\",\n  \"message\": {\n    \"text\": \"{{ $('Preparer Donnees Post').first().json.commentaire_lien }}\"\n  }\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "49ae9c81-9d1d-44c9-99fc-21e33b21e50a",
+      "name": "Poster Commentaire LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        704
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gzFGtaoxzrlyP0vK",
+          "name": "Header Auth account"
+        },
+        "oAuth2Api": {
+          "id": "yn8V5riFF3X9OMyq",
+          "name": "Unnamed credential"
+        }
+      },
+      "notes": "Poste le premier commentaire avec le lien"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "posts",
+        "limit": 10,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "statut",
+              "condition": "eq",
+              "keyValue": "Planifie"
+            }
+          ]
+        }
+      },
+      "id": "5d0f32fd-14bb-4f07-a083-7c973f449d6c",
+      "name": "Recuperer Posts Valeur",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2192,
+        896
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "Posts valeur (contenus IA)"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "posts_promo",
+        "limit": 10,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "statut",
+              "condition": "eq",
+              "keyValue": "Planifie"
+            }
+          ]
+        }
+      },
+      "id": "6fe0779b-dad7-4f0b-809f-04d54e5f9588",
+      "name": "Recuperer Posts Promo",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2192,
+        1088
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "Posts promo (produits)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperer les posts des deux sources\nconst postsValeur = $('Recuperer Posts Valeur').all().map(item => ({\n  ...item.json,\n  post_type: 'valeur',\n  table_name: 'posts'\n}));\n\nconst postsPromo = $('Recuperer Posts Promo').all().map(item => ({\n  ...item.json,\n  post_type: 'promo',\n  table_name: 'posts_promo'\n}));\n\n// Combiner et trier par date de publication prevue\nconst allPosts = [...postsValeur, ...postsPromo]\n  .filter(post => post.id) // Filtrer les resultats vides\n  .sort((a, b) => {\n    const dateA = new Date(a.date_publication_prevue || '9999-12-31');\n    const dateB = new Date(b.date_publication_prevue || '9999-12-31');\n    return dateA - dateB;\n  });\n\nif (allPosts.length === 0) {\n  return [{ json: { no_posts: true } }];\n}\n\nreturn allPosts.map(post => ({ json: post }));"
+      },
+      "id": "5fc67516-051d-40ea-bf4a-876c3eb80cf4",
+      "name": "Fusionner Tous Les Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1968,
+        992
+      ],
+      "notes": "Combine posts valeur et promo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.no_posts }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "e4457db4-7c59-497b-b618-28cb70d5176b",
+      "name": "SI Aucun Post",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1744,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Preparer Donnees Post').first().json.post_type }}",
+              "value2": "promo"
+            }
+          ]
+        }
+      },
+      "id": "1ed6e5d1-a3bc-4a3c-b1fe-144be54178c2",
+      "name": "SI Post Promo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        896
+      ],
+      "notes": "Route vers la bonne table pour update"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "posts_promo",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Preparer Donnees Post').first().json.post_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "Publie"
+            },
+            {
+              "fieldId": "date_publication_effective",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "linkedin_post_id",
+              "fieldValue": "={{ $('Creer Post LinkedIn').first().json.id }}"
+            },
+            {
+              "fieldId": "lien_post_linkedin",
+              "fieldValue": "=https://www.linkedin.com/feed/update/{{ $('Creer Post LinkedIn').first().json.id }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "c305d729-30b5-4ef0-8722-b865c60f910f",
+      "name": "MAJ Post Promo Publie",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        704,
+        800
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "MAJ table posts_promo"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "posts",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Preparer Donnees Post').first().json.post_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "Publie"
+            },
+            {
+              "fieldId": "date_publication_reelle",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "lien_post_linkedin",
+              "fieldValue": "=https://www.linkedin.com/feed/update/{{ $('Creer Post LinkedIn').first().json.id }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "a777c52c-cb77-4c4f-8765-2eae6d73e66b",
+      "name": "MAJ Post Valeur Publie",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16,
+        992
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "MAJ table posts"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "produits_promo",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $node['Fusionner Tous Les Posts'].json.produit_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "Poste"
+            },
+            {
+              "fieldId": "posted_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "84e7f3d2-0388-45e4-b024-5882cdd87210",
+      "name": "MAJ Produit Poste",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        928,
+        800
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "notes": "MAJ statut produit source"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merger les resultats des deux branches\nconst postData = $('Preparer Donnees Post').first().json;\nconst linkedInPostId = $('Creer Post LinkedIn').first().json.id;\n\nreturn {\n  json: {\n    post_id: postData.post_id,\n    post_type: postData.post_type,\n    titre: postData.titre,\n    linkedin_post_id: linkedInPostId,\n    lien_post: 'https://www.linkedin.com/feed/update/' + linkedInPostId,\n    published_at: new Date().toISOString()\n  }\n};"
+      },
+      "id": "adec51dd-2f77-4990-b05c-62dff996de1f",
+      "name": "Fusionner Resultats MAJ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.table_name }}",
+              "value2": "posts_promo"
+            }
+          ]
+        }
+      },
+      "id": "08234c15-7c06-4b9b-b6df-30ac857b7a92",
+      "name": "SI Erreur Promo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "posts_promo",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Gestionnaire Erreurs').first().json.post_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "Erreur_Publication"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "b4c154a4-0d87-47f2-9123-5ee4e9fb0eb3",
+      "name": "MAJ Erreur Promo",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        1104
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "posts",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Gestionnaire Erreurs').first().json.post_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "Erreur_Publication"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "f1477c1e-574c-4875-bb8d-35b3d3d3d514",
+      "name": "MAJ Erreur Valeur",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        1264
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            },
+            {
+              "triggerAtHour": 14
+            }
+          ]
+        }
+      },
+      "id": "d47d72cf-22de-45ad-a11e-d638dc68d97b",
+      "name": "Declencheur Cron",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2400,
+        992
+      ],
+      "disabled": true,
+      "notes": "Mardi 10h et Jeudi 14h"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    message: 'Aucun post a publier pour ce creneau.',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "2cf4a356-3002-48e7-ae67-ff9b88cc09b8",
+      "name": "Log Rien A Publier",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b07c4d0a-be45-4ce1-acb1-dbcc7c43d2ba",
+      "name": "Boucle Chaque Post",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1520,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\n\n// Construire le contenu du post LinkedIn\nconst parts = [];\nif (post.hook) parts.push(post.hook);\nif (post.corps) parts.push(post.corps);\nif (post.cta) parts.push(post.cta);\nif (post.hashtags) {\n  // S'assurer que les hashtags sont une string\n  const hashtagsStr = Array.isArray(post.hashtags) \n    ? post.hashtags.join(' ') \n    : post.hashtags;\n  parts.push(hashtagsStr);\n}\n\nconst content = parts.join('\\n\\n');\n\n// Determiner l'image a utiliser\n// Pour les promos: image_transformee_url\n// Pour les valeur: image_url\nlet imageUrl = post.image_url;\nif (post.post_type === 'promo' && post.image_transformee_url) {\n  imageUrl = post.image_transformee_url;\n}\n\nreturn {\n  json: {\n    post_id: post.id,\n    post_type: post.post_type,\n    table_name: post.table_name,\n    content: content,\n    image_url: imageUrl,\n    titre: post.titre_interne || post.nom_produit || 'Post LinkedIn',\n    // URN LinkedIn du compte Rapid Pub\n    organization_urn: 'urn:li:person:bdTbzLPSNl',\n    commentaire_lien: post.commentaire_lien || ''\n  }\n};"
+      },
+      "id": "73a121da-e4b7-4622-9be0-87a10026d413",
+      "name": "Preparer Donnees Post",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1312,
+        896
+      ],
+      "notes": "Adapte pour valeur ET promo"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.image_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "9a59f980-a53b-4239-a5ec-022fa2b7141f",
+      "name": "Telecharger Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1088,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"registerUploadRequest\": {\n    \"recipes\": [\"urn:li:digitalmediaRecipe:feedshare-image\"],\n    \"owner\": \"{{ $('Preparer Donnees Post').first().json.organization_urn }}\",\n    \"serviceRelationships\": [\n      {\n        \"relationshipType\": \"OWNER\",\n        \"identifier\": \"urn:li:userGeneratedContent\"\n      }\n    ]\n  }\n}\n",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "6a8bfa1d-f3b8-4e80-b95e-e1ef882770c5",
+      "name": "Enregistrer Upload Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -864,
+        896
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gzFGtaoxzrlyP0vK",
+          "name": "Header Auth account"
+        },
+        "oAuth2Api": {
+          "id": "yn8V5riFF3X9OMyq",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "ce02980b-2d57-4466-9a85-f0bfc0b3eb51",
+      "name": "Uploader Image Binaire",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -640,
+        896
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gzFGtaoxzrlyP0vK",
+          "name": "Header Auth account"
+        },
+        "oAuth2Api": {
+          "id": "yn8V5riFF3X9OMyq",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"author\": \"{{ $('Preparer Donnees Post').first().json.organization_urn }}\",\n  \"lifecycleState\": \"PUBLISHED\",\n  \"visibility\": \"PUBLIC\",\n  \"distribution\": {\n    \"feedDistribution\": \"MAIN_FEED\",\n    \"targetEntities\": [],\n    \"thirdPartyDistributionChannels\": []\n  },\n  \"content\": {\n    \"media\": {\n      \"id\": \"{{ $('Enregistrer Upload Image').first().json.value.asset }}\"\n    }\n  },\n  \"commentary\": \"{{ $('Preparer Donnees Post').first().json.content }}\"\n}\n",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b0faaa52-b861-491f-a292-253e56609cee",
+      "name": "Creer Post LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -432,
+        896
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gzFGtaoxzrlyP0vK",
+          "name": "Header Auth account"
+        },
+        "oAuth2Api": {
+          "id": "yn8V5riFF3X9OMyq",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "raphael@gralt.fr",
+        "subject": "={{ $json.post_type === 'promo' ? '\\uD83C\\uDF1F' : '\\u2705' }} Post LinkedIn publie : {{ $json.titre }}",
+        "message": "=<h2>{{ $json.post_type === 'promo' ? '\\uD83C\\uDF1F Post Promo' : '\\uD83C\\uDF89 Post Valeur' }} publie avec succes !</h2>\n\n<p><strong>Type :</strong> {{ $json.post_type === 'promo' ? 'Promotion Produit' : 'Contenu Valeur' }}</p>\n<p><strong>Titre :</strong> {{ $json.titre }}</p>\n<p><strong>Date :</strong> {{ $now.format('DD/MM/YYYY HH:mm') }}</p>\n\n<p>\n  <a href=\"{{ $json.lien_post }}\" \n     style=\"background: #E94E1B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;\">\n    Voir le post sur LinkedIn\n  </a>\n</p>\n\n<hr>\n<p style=\"color: #666; font-size: 12px;\">\n  Rapid Pub - Gestionnaire de posts LinkedIn\n</p>",
+        "options": {}
+      },
+      "id": "39de182b-8b96-43cc-a782-ba9e2b9b8fa7",
+      "name": "Envoyer Email Succes",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1456,
+        896
+      ],
+      "webhookId": "72d263d6-65d4-4815-9239-2ac87b7fe921",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "52jhC2vFU9hBfFrX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "logs_workflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "date_execution",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "statut",
+              "fieldValue": "Succes"
+            },
+            {
+              "fieldId": "posts_generes",
+              "fieldValue": "1"
+            }
+          ]
+        }
+      },
+      "id": "c6a06453-ed0c-4d07-992b-31f7a8075e57",
+      "name": "Log Succes",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        896
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.first().json;\n\nlet postId = 'unknown';\nlet postType = 'unknown';\nlet titre = 'Inconnu';\nlet tableName = 'posts';\n\ntry {\n  const postData = $('Preparer Donnees Post').first().json;\n  postId = postData?.post_id || 'unknown';\n  postType = postData?.post_type || 'unknown';\n  titre = postData?.titre || 'Inconnu';\n  tableName = postData?.table_name || 'posts';\n} catch (e) {\n  // Prepare Post Data may not have run yet\n}\n\nreturn {\n  json: {\n    post_id: postId,\n    post_type: postType,\n    table_name: tableName,\n    titre: titre,\n    error_message: error.message || 'Erreur lors de la publication LinkedIn',\n    error_details: JSON.stringify(error, null, 2),\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "d46be367-1ea5-4f6c-821c-dd3e0d6d2c05",
+      "name": "Gestionnaire Erreurs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1088,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "raphael@gralt.fr",
+        "subject": "=\\u26A0\\uFE0F Erreur publication LinkedIn : {{ $('Gestionnaire Erreurs').first().json.titre }}",
+        "message": "=<h2>\\u26A0\\uFE0F Erreur lors de la publication</h2>\n\n<p><strong>Type :</strong> {{ $('Gestionnaire Erreurs').first().json.post_type === 'promo' ? 'Promotion Produit' : 'Contenu Valeur' }}</p>\n<p><strong>Post :</strong> {{ $('Gestionnaire Erreurs').first().json.titre }}</p>\n<p><strong>Erreur :</strong> {{ $('Gestionnaire Erreurs').first().json.error_message }}</p>\n<p><strong>Date :</strong> {{ $now.format('DD/MM/YYYY HH:mm') }}</p>\n\n<p>Le statut du post a ete mis a jour en <strong>Erreur_Publication</strong>. Vous pouvez relancer la publication manuellement depuis n8n.</p>\n\n<hr>\n<p style=\"color: #666; font-size: 12px;\">\n  Si l'erreur persiste, verifiez les credentials LinkedIn dans n8n.\n</p>",
+        "options": {}
+      },
+      "id": "8ca4a643-7d16-4f71-9541-6fae75ef2a4a",
+      "name": "Envoyer Email Erreur",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        1184
+      ],
+      "webhookId": "bab0095b-f5d9-4f2c-add3-215c41d3f711",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "52jhC2vFU9hBfFrX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "logs_workflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "date_execution",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "statut",
+              "fieldValue": "Erreur"
+            },
+            {
+              "fieldId": "posts_generes",
+              "fieldValue": "0"
+            },
+            {
+              "fieldId": "erreurs",
+              "fieldValue": "={{ $('Gestionnaire Erreurs').first().json.error_message }}"
+            }
+          ]
+        }
+      },
+      "id": "24cea89d-4031-4b75-bd2d-a303af37129b",
+      "name": "Log Erreur",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        1184
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Declencheur Erreur",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1312,
+        1184
+      ],
+      "notes": "Declenche le flux d'erreur en cas de probleme"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "SI Commentaire Lien": {
+      "main": [
+        [
+          {
+            "node": "Attendre Avant Commentaire",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MAJ Post Promo Publie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attendre Avant Commentaire": {
+      "main": [
+        [
+          {
+            "node": "Poster Commentaire LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poster Commentaire LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "MAJ Post Promo Publie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperer Posts Valeur": {
+      "main": [
+        [
+          {
+            "node": "Fusionner Tous Les Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperer Posts Promo": {
+      "main": [
+        [
+          {
+            "node": "Fusionner Tous Les Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fusionner Tous Les Posts": {
+      "main": [
+        [
+          {
+            "node": "SI Aucun Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SI Aucun Post": {
+      "main": [
+        [
+          {
+            "node": "Log Rien A Publier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Boucle Chaque Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SI Post Promo": {
+      "main": [
+        [
+          {
+            "node": "SI Commentaire Lien",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MAJ Post Valeur Publie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MAJ Post Promo Publie": {
+      "main": [
+        [
+          {
+            "node": "MAJ Produit Poste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MAJ Post Valeur Publie": {
+      "main": [
+        [
+          {
+            "node": "Fusionner Resultats MAJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MAJ Produit Poste": {
+      "main": [
+        [
+          {
+            "node": "Fusionner Resultats MAJ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fusionner Resultats MAJ": {
+      "main": [
+        [
+          {
+            "node": "Envoyer Email Succes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SI Erreur Promo": {
+      "main": [
+        [
+          {
+            "node": "MAJ Erreur Promo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MAJ Erreur Valeur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MAJ Erreur Promo": {
+      "main": [
+        [
+          {
+            "node": "Envoyer Email Erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MAJ Erreur Valeur": {
+      "main": [
+        [
+          {
+            "node": "Envoyer Email Erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Declencheur Cron": {
+      "main": [
+        [
+          {
+            "node": "Recuperer Posts Valeur",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Recuperer Posts Promo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Boucle Chaque Post": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Preparer Donnees Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparer Donnees Post": {
+      "main": [
+        [
+          {
+            "node": "Telecharger Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telecharger Image": {
+      "main": [
+        [
+          {
+            "node": "Enregistrer Upload Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enregistrer Upload Image": {
+      "main": [
+        [
+          {
+            "node": "Uploader Image Binaire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uploader Image Binaire": {
+      "main": [
+        [
+          {
+            "node": "Creer Post LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Creer Post LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "SI Post Promo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envoyer Email Succes": {
+      "main": [
+        [
+          {
+            "node": "Log Succes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Succes": {
+      "main": [
+        [
+          {
+            "node": "Boucle Chaque Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gestionnaire Erreurs": {
+      "main": [
+        [
+          {
+            "node": "SI Erreur Promo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envoyer Email Erreur": {
+      "main": [
+        [
+          {
+            "node": "Log Erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Declencheur Erreur": {
+      "main": [
+        [
+          {
+            "node": "Gestionnaire Erreurs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d11a12c9-d8d6-4014-aa16-c6acbb369335",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c68d0e75da974712b0aa88aaeec1176d721c357e16ef5838f19fd54163f6cbd7"
+  },
+  "id": "yIUnWmMCZF3jU9ZQ",
+  "tags": [
+    {
+      "updatedAt": "2026-02-02T16:12:00.859Z",
+      "createdAt": "2026-02-02T16:12:00.859Z",
+      "id": "Fj19eWa2ctdMfBWd",
+      "name": "RAPIDPUB"
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "name": "Workflow 1b - Restaurer Version",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "restore-version",
+        "responseMode": "lastNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "restore-version"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "getAll",
+        "tableId": "posts",
+        "returnAll": false,
+        "limit": 1,
+        "additionalFields": {}
+      },
+      "name": "Get Post from Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\n\nif (!post.version_precedente) {\n  throw new Error('Aucune version précédente disponible');\n}\n\nconst previous = typeof post.version_precedente === 'string'\n  ? JSON.parse(post.version_precedente)\n  : post.version_precedente;\n\nreturn {\n  json: {\n    post_id: post.id,\n    hook: previous.hook,\n    corps: previous.corps,\n    cta: previous.cta,\n    hashtags: previous.hashtags\n  }\n};"
+      },
+      "name": "Parse & Restore",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "updateKey": "id",
+        "columnValuePairs": {}
+      },
+      "name": "Update Post",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        910,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: true,\n    message: \"Version précédente restaurée\"\n  }\n};"
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Post from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post from Supabase": {
+      "main": [
+        [
+          {
+            "node": "Parse & Restore",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Restore": {
+      "main": [
+        [
+          {
+            "node": "Update Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Post": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": []
+}

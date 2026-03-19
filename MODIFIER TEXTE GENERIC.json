@@ -1,0 +1,318 @@
+{
+  "name": "MODIFIER TEXTE GENERIC",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "modify-text",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "modify-text",
+      "id": "f177bb83-a801-4646-b0ab-2cb38150e682"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "posts",
+        "limit": 1
+      },
+      "name": "Get Post from Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "830f83ec-0999-4600-b9bd-a1716ad551af",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\n\nreturn {\n  json: {\n    post_id: post.id,\n    current_hook: post.hook,\n    current_corps: post.corps,\n    current_cta: post.cta,\n    current_hashtags: post.hashtags,\n    version_precedente: JSON.stringify({\n      hook: post.hook,\n      corps: post.corps,\n      cta: post.cta,\n      hashtags: post.hashtags,\n      saved_at: new Date().toISOString()\n    }),\n    user_prompt: $('Webhook').first().json.prompt\n  }\n};"
+      },
+      "name": "Save Previous Version",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "959657c0-1122-459a-89bd-4f084c489010"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "posts"
+      },
+      "name": "Set Status Modification_En_Cours",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "52a7e5fd-7642-4cbd-8b91-fc9162b171d8",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst previousData = $('Save Previous Version').first().json;\n\n// Handle both Anthropic and OpenAI response formats\nlet content = response.message?.content || (Array.isArray(response.content) ? response.content[0].text : response.content) || response.text;\n\n// Nettoyer le JSON si wrapped dans markdown\nif (typeof content === 'string') {\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  content = JSON.parse(content);\n}\n\nreturn {\n  json: {\n    post_id: previousData.post_id,\n    hook: content.hook,\n    corps: content.corps,\n    cta: content.cta,\n    hashtags: content.hashtags,\n    modifications_effectuees: content.modifications_effectuees,\n    version_precedente: previousData.version_precedente\n  }\n};"
+      },
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "49c2892f-3249-41a8-9f48-dd2debe3dba9"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "posts"
+      },
+      "name": "Update Post in Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        0
+      ],
+      "id": "84167103-56ea-48bc-adeb-9ef46437ddcf",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: true,\n    post_id: $json.post_id,\n    modifications: $json.modifications_effectuees\n  }\n};"
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "70636bc9-4679-4739-a04e-2d76f031c096"
+    },
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        448,
+        224
+      ],
+      "id": "f5c1850f-f0c2-4802-bbdf-540b0a51f838"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "posts"
+      },
+      "name": "Rollback Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        224
+      ],
+      "id": "d171b2d8-fb6d-4ef3-ad29-cf4c83a4255c",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: false,\n    error: \"La modification a échoué. Veuillez réessayer.\"\n  }\n};"
+      },
+      "name": "Error Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        224
+      ],
+      "id": "0643a3a3-1581-4698-a7d0-32d23e61027a"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        880,
+        0
+      ],
+      "id": "86fbc614-53ab-410e-a5d2-da6b8ba336fa",
+      "name": "Message a model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Post from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post from Supabase": {
+      "main": [
+        [
+          {
+            "node": "Save Previous Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Previous Version": {
+      "main": [
+        [
+          {
+            "node": "Set Status Modification_En_Cours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Update Post in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Post in Supabase": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Rollback Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rollback Status": {
+      "main": [
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Status Modification_En_Cours": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9271cc65-1631-4119-8d9e-1434b89a5fce",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c68d0e75da974712b0aa88aaeec1176d721c357e16ef5838f19fd54163f6cbd7"
+  },
+  "id": "95oFdvrWLwgGduslUMw7J",
+  "tags": [
+    {
+      "updatedAt": "2026-02-02T16:12:00.859Z",
+      "createdAt": "2026-02-02T16:12:00.859Z",
+      "id": "Fj19eWa2ctdMfBWd",
+      "name": "RAPIDPUB"
+    }
+  ]
+}

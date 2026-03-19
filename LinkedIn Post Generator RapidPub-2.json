@@ -1,0 +1,1239 @@
+{
+  "name": "LinkedIn Post Generator RapidPub",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "2ec2eb63-8fc4-4eea-a2c2-5ec7372f8a90",
+      "name": "Lundi 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        384
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c483ea64-ccfd-434c-9357-4874ccb45f97",
+      "name": "Test Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=printing+industry&hl=fr",
+        "options": {}
+      },
+      "id": "9a09dd5f-ae97-4ba6-ab23-6cb8d7936f6d",
+      "name": "RSS GraphiLine",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://printmediacentr.com/feed/",
+        "options": {}
+      },
+      "id": "c399da4e-f048-4661-8de5-b9c9b7377bb2",
+      "name": "RSS PrintWeek",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.fespa.com/feed/",
+        "options": {}
+      },
+      "id": "0cef8d55-1d44-4f17-b23c-bde25b697938",
+      "name": "RSS FESPA",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appjGlY7zdhLNoigh",
+          "mode": "list",
+          "cachedResultName": "Rapid Pub - LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appjGlY7zdhLNoigh"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl4hdYxOpeqVT1Md",
+          "mode": "list",
+          "cachedResultName": "Contenus_Client",
+          "cachedResultUrl": "https://airtable.com/appjGlY7zdhLNoigh/tbl4hdYxOpeqVT1Md"
+        },
+        "filterByFormula": "NOT({Deja_Utilise})",
+        "options": {}
+      },
+      "id": "87b365f4-cd44-4ce2-98c5-03df0f9b8825",
+      "name": "Contenus Client",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        944
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "T5PbwUcWhbq1wvmz",
+          "name": "Airtable Personal Access Token account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "e3b8a479-8d39-4d4f-8dea-bed5dc0dc5cb",
+      "name": "Merge RSS",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        624,
+        528
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "856356e8-223a-443d-bdf3-a844f934536d",
+      "name": "Merge All Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        848,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = items.map(item => item.json);\n\nfunction cleanText(text) {\n  if (!text) return '';\n  return text\n    .replace(/<[^>]*>/g, '')\n    .replace(/\\s+/g, ' ')\n    .trim()\n    .substring(0, 1000);\n}\n\nconst seen = new Set();\nconst cleaned = [];\n\nfor (const item of allItems) {\n  const key = (item.title || item.text || item.content || '').substring(0, 100);\n  if (key && !seen.has(key)) {\n    seen.add(key);\n    cleaned.push({\n      source: item.source || item.companyName || 'RSS',\n      title: cleanText(item.title || ''),\n      content: cleanText(item.content || item.text || item.description || ''),\n      engagement: item.likes || item.reactions || item.numLikes || 0,\n      comments: item.comments || item.numComments || 0,\n      date: item.pubDate || item.postedAt || item.date || new Date().toISOString(),\n      url: item.link || item.url || item.postUrl || ''\n    });\n  }\n}\n\nconst sorted = cleaned\n  .sort((a, b) => (b.engagement + b.comments) - (a.engagement + a.comments))\n  .slice(0, 40);\n\nreturn [{ json: { veille_data: sorted, count: sorted.length } }];"
+      },
+      "id": "d94eec08-44e7-4888-92de-6347444b2b34",
+      "name": "Clean and Dedupe",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en analyse de contenu LinkedIn pour le secteur de l'imprimerie B2B.\n\nAnalyse les posts et actualites fournis et identifie :\n1. Les hooks qui generent le plus d'engagement\n2. Les formats de posts qui fonctionnent (liste, storytelling, question, stat choc...)\n3. Les sujets tendance dans le secteur\n4. Les bonnes pratiques de formatting\n5. Les erreurs a eviter\n\nReponds en JSON structure.",
+              "role": "system"
+            },
+            {
+              "content": "=Voici les donnees de veille collectees ({{ $json.count }} elements) :\n\n{{ JSON.stringify($json.veille_data, null, 2) }}\n\nAnalyse ces contenus et fournis tes insights en JSON avec cette structure :\n{\n  \"hooks_performants\": [\"exemple 1\", \"exemple 2\"],\n  \"formats_engageants\": [\"format 1 avec explication\"],\n  \"sujets_tendance\": [\"sujet 1\", \"sujet 2\"],\n  \"bonnes_pratiques\": [\"pratique 1\"],\n  \"erreurs_a_eviter\": [\"erreur 1\"],\n  \"insights_cles\": \"Resume des insights principaux\"\n}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.7
+        }
+      },
+      "id": "2ccc2fa0-02b1-4fcb-9d6c-53c9e0aaba5c",
+      "name": "Analyse Tendances",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        384
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert LinkedIn pour Rapid Pub, une imprimerie en ligne francaise B2B avec livraison en 24h.\n\nIDENTITE DE MARQUE :\n- Nom : Rapid Pub\n- Secteur : Imprimerie en ligne B2B\n- USP : Livraison en 24h\n- Cible : 95% B2B (PME, agences, commerces)\n- Ton : Relache et cool, mais professionnel. Pas corporate.\n\nCOULEURS (pour context visuel) :\n- Orange principal : #E94E1B\n- Vert accent : #A4C639\n\nREGLES DE REDACTION :\n1. Hook percutant en premiere ligne (emoji + question ou stat choc)\n2. Paragraphes courts (2-3 lignes max)\n3. Utiliser des emojis avec parcimonie (3-5 max par post)\n4. CTA engageant (question ouverte de preference)\n5. 4-6 hashtags pertinents\n6. Longueur totale : 800-1500 caracteres\n\nCATEGORIES A COUVRIR (2 posts chacune) :\n- Educatif : Tips pratiques sur l'impression\n- Coulisses : Behind the scenes, equipe, process\n- Actualite : News secteur, tendances\n- Storytelling : Cas clients, temoignages (fictifs mais realistes)\n- Decale : Humour, format original, relatable",
+              "role": "system"
+            },
+            {
+              "content": "=Voici l'analyse des tendances actuelles :\n{{ $json.message.content }}\n\nGenere maintenant 10 posts LinkedIn varies pour Rapid Pub.\n\nFORMAT DE SORTIE OBLIGATOIRE (JSON valide) :\n{\n  \"posts\": [\n    {\n      \"id\": 1,\n      \"categorie\": \"educatif\",\n      \"titre_interne\": \"Titre court pour reperage\",\n      \"hook\": \"Premiere ligne accrocheuse avec emoji\",\n      \"corps\": \"Contenu principal du post avec sauts de ligne...\",\n      \"cta\": \"Question ou appel a l'action\",\n      \"hashtags\": [\"#imprimerie\", \"#print\", \"#communication\", \"#B2B\"],\n      \"format_visuel\": \"carrousel\",\n      \"nombre_slides\": 5,\n      \"idee_visuel\": \"Description de l'idee de visuel pour ce post\"\n    }\n  ]\n}\n\nAssure-toi que :\n- Les 10 posts sont varies et originaux\n- Chaque categorie a exactement 2 posts\n- Les hooks sont vraiment accrocheurs\n- Le ton est relache mais pro"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 6000,
+          "temperature": 0.8
+        }
+      },
+      "id": "fe08b39e-1612-4263-9512-0edeade5ef6d",
+      "name": "Generation 10 Posts",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        384
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let content = $input.first().json.message?.content || (Array.isArray($input.first().json.content) ? $input.first().json.content[0].text : $input.first().json.content);\n\nif (typeof content === 'string') {\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '');\n  content = JSON.parse(content);\n}\n\nconst posts = content.posts || content;\n\nconst enrichedPosts = posts.map((post, index) => ({\n  ...post,\n  date_generation: new Date().toISOString(),\n  statut: 'A_Valider',\n  score_ia: 0,\n  suggestions_ia: ''\n}));\n\nreturn enrichedPosts.map(post => ({ json: post }));"
+      },
+      "id": "dc356612-b37c-45b2-a47f-0ef85ad8a193",
+      "name": "Parse Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en scoring de posts LinkedIn.\n\nEvalue chaque post sur 3 criteres (1-10) :\n1. Potentiel d'engagement (hook, CTA, format)\n2. Originalite (pas vu 100 fois)\n3. Valeur ajoutee (utile pour la cible B2B)\n\nScore final = moyenne des 3.\nSi score < 7, donne des suggestions concretes d'amelioration.",
+              "role": "system"
+            },
+            {
+              "content": "=Score ce post LinkedIn :\n\nCategorie: {{ $json.categorie }}\nHook: {{ $json.hook }}\nCorps: {{ $json.corps }}\nCTA: {{ $json.cta }}\n\nReponds en JSON :\n{\n  \"score_engagement\": 8,\n  \"score_originalite\": 7,\n  \"score_valeur\": 8,\n  \"score_final\": 7.7,\n  \"suggestions\": \"Suggestion si score < 7, sinon chaine vide\"\n}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.3
+        }
+      },
+      "id": "bce1ce84-335c-4266-8260-a4ab3a4c9fce",
+      "name": "Scoring Post",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1936,
+        384
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst parsedPosts = $('Parse Posts').all();\n\nreturn items.map((item, index) => {\n  const post = parsedPosts[index]?.json || {};\n  let scoreData = item.json.message?.content || (Array.isArray(item.json.content) ? item.json.content[0].text : item.json.content) || item.json;\n\n  if (typeof scoreData === 'string') {\n    scoreData = JSON.parse(scoreData);\n  }\n\n  return {\n    json: {\n      ...post,\n      score_ia: scoreData.score_final || 7,\n      suggestions_ia: scoreData.suggestions || ''\n    }\n  };\n});"
+      },
+      "id": "dee64635-1276-4de9-840b-1cd17ef9b13e",
+      "name": "Merge Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en generation de prompts pour DALL-E 3, specialise dans les visuels LinkedIn professionnels.\n\nCHARTE GRAPHIQUE RAPID PUB :\n- Couleur principale : Orange vif #E94E1B\n- Couleur accent : Vert lime #A4C639\n- Style : Flat design moderne avec touches 3D subtiles\n- Elements signature : Petits carres/pixels disperses (effet digital/vitesse)\n- Ambiance : Dynamique, professionnelle, accessible\n\nFORMATS SELON CATEGORIE :\n- Educatif : Carrousel portrait 1080x1350\n- Coulisses : Carre 1200x1200\n- Actualite : Infographie carree 1200x1200\n- Storytelling : Paysage 1200x628\n- Decale : Portrait creatif 1080x1350",
+              "role": "system"
+            },
+            {
+              "content": "=Genere le prompt DALL-E pour ce post LinkedIn :\n\nCategorie: {{ $json.categorie }}\nTitre: {{ $json.titre_interne }}\nIdee visuel: {{ $json.idee_visuel }}\nFormat: {{ $json.format_visuel }}\nNombre de slides: {{ $json.nombre_slides }}\n\nReponds en JSON :\n{\n  \"format\": \"1080x1350\",\n  \"prompt_principal\": \"Prompt DALL-E complet et detaille pour l'image principale, en français, respectant la charte graphique\",\n  \"prompts_slides\": []\n}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.8
+        }
+      },
+      "id": "61e307d3-4ef5-4c79-92e1-63d29f3174e0",
+      "name": "Genere Prompts Images",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        384
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst mergedScores = $('Merge Score').all();\n\nreturn items.map((item, index) => {\n  const post = mergedScores[index]?.json || {};\n  let promptData = item.json.message?.content || (Array.isArray(item.json.content) ? item.json.content[0].text : item.json.content) || item.json;\n\n  if (typeof promptData === 'string') {\n    promptData = JSON.parse(promptData);\n  }\n\n  return {\n    json: {\n      ...post,\n      image_format: promptData.format,\n      prompt_image_principal: promptData.prompt_principal,\n      prompts_slides: promptData.prompts_slides || []\n    }\n  };\n});"
+      },
+      "id": "0ee39bd7-c339-44ac-a789-aceca6352516",
+      "name": "Merge Prompts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "={{ $json.prompt_image_principal }}",
+        "options": {
+          "dalleQuality": "hd",
+          "size": "1024x1024",
+          "style": "vivid"
+        }
+      },
+      "id": "54902409-94ab-4a2e-9a9a-fde8a1974fd0",
+      "name": "DALL-E Generate",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        2848,
+        384
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dcxj1nknb/image/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "upload_preset",
+              "value": "rapid-pub-linkedin"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5311351e-2a80-4045-b4e3-5b2be286fcdd",
+      "name": "Upload Cloudinary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3024,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $('Merge Prompts').item.json;\nconst cloudinaryResponse = $input.first().json;\n\nreturn [{\n  json: {\n    Date_Generation: post.date_generation,\n    Categorie: post.categorie.charAt(0).toUpperCase() + post.categorie.slice(1),\n    Titre_Interne: post.titre_interne,\n    Hook: post.hook,\n    Corps: post.corps,\n    CTA: post.cta,\n    Hashtags: post.hashtags.join(' '),\n    Format_Visuel: post.format_visuel,\n    Prompt_Image: post.prompt_image_principal,\n    URL_Image_1: cloudinaryResponse.secure_url || '',\n    Score_IA: post.score_ia,\n    Suggestions_IA: post.suggestions_ia,\n    Statut: 'A_Valider'\n  }\n}];"
+      },
+      "id": "cafd0d9e-484b-4eb3-a6b4-011b5ce1f9f7",
+      "name": "Prepare Airtable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3200,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appjGlY7zdhLNoigh",
+          "mode": "list",
+          "cachedResultName": "Rapid Pub - LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appjGlY7zdhLNoigh"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl5jbF40or90nQVC",
+          "mode": "list",
+          "cachedResultName": "Posts_LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appjGlY7zdhLNoigh/tbl5jbF40or90nQVC"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Score_IA": "={{ $json.Score_IA }}",
+            "Date_Generation": "={{ $json.Date_Generation }}",
+            "Categorie": "={{ $json.Categorie }}",
+            "Titre_Interne": "={{ $json.Titre_Interne }}",
+            "Hook": "={{ $json.Hook }}",
+            "Corps": "={{ $json.Corps }}",
+            "CTA": "={{ $json.CTA }}",
+            "Hashtags": "={{ $json.Hashtags }}",
+            "Format_Visuel": "={{ $json.Format_Visuel }}",
+            "Prompt_Image": "={{ $json.Prompt_Image }}",
+            "URL_Image_1": "={{ $json.URL_Image_1 }}",
+            "Suggestions_IA": "={{ $json.Suggestions_IA }}",
+            "Statut": "A_Valider"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date_Generation",
+              "displayName": "Date_Generation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Categorie",
+              "displayName": "Categorie",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Educatif",
+                  "value": "Educatif"
+                },
+                {
+                  "name": "Coulisses",
+                  "value": "Coulisses"
+                },
+                {
+                  "name": "Actualite",
+                  "value": "Actualite"
+                },
+                {
+                  "name": "Storytelling",
+                  "value": "Storytelling"
+                },
+                {
+                  "name": "Decale",
+                  "value": "Decale"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Titre_Interne",
+              "displayName": "Titre_Interne",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Corps",
+              "displayName": "Corps",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Format_Visuel",
+              "displayName": "Format_Visuel",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "carrousel",
+                  "value": "carrousel"
+                },
+                {
+                  "name": "image_simple",
+                  "value": "image_simple"
+                },
+                {
+                  "name": "infographie",
+                  "value": "infographie"
+                },
+                {
+                  "name": "photo_style",
+                  "value": "photo_style"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Prompt_Image",
+              "displayName": "Prompt_Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "URL_Image_1",
+              "displayName": "URL_Image_1",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Score_IA",
+              "displayName": "Score_IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Suggestions_IA",
+              "displayName": "Suggestions_IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Statut",
+              "displayName": "Statut",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "A_Valider",
+                  "value": "A_Valider"
+                },
+                {
+                  "name": "Valide",
+                  "value": "Valide"
+                },
+                {
+                  "name": "Modifie",
+                  "value": "Modifie"
+                },
+                {
+                  "name": "Rejete",
+                  "value": "Rejete"
+                },
+                {
+                  "name": "Planifie",
+                  "value": "Planifie"
+                },
+                {
+                  "name": "Publie",
+                  "value": "Publie"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Logs_Workflow",
+              "displayName": "Logs_Workflow",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f33de01c-8f21-44af-8e46-717c07a6e640",
+      "name": "Save to Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        3360,
+        384
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "T5PbwUcWhbq1wvmz",
+          "name": "Airtable Personal Access Token account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appjGlY7zdhLNoigh",
+          "mode": "list",
+          "cachedResultName": "Rapid Pub - LinkedIn",
+          "cachedResultUrl": "https://airtable.com/appjGlY7zdhLNoigh"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblWxC5gAG6FbFa8A",
+          "mode": "list",
+          "cachedResultName": "Logs_Workflow",
+          "cachedResultUrl": "https://airtable.com/appjGlY7zdhLNoigh/tblWxC5gAG6FbFa8A"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Posts_Generes": "={{ $items().length }}",
+            "Images_Generees": "={{ $items().length }}",
+            "Date_Execution": "={{ $now.toISO() }}",
+            "Statut": "Succes"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date_Execution",
+              "displayName": "Date_Execution",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Statut",
+              "displayName": "Statut",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Succes",
+                  "value": "Succes"
+                },
+                {
+                  "name": "Erreur",
+                  "value": "Erreur"
+                },
+                {
+                  "name": "Partiel",
+                  "value": "Partiel"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Posts_Generes",
+              "displayName": "Posts_Generes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Images_Generees",
+              "displayName": "Images_Generees",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Erreurs",
+              "displayName": "Erreurs",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d68bff14-d987-4036-abb9-34f33fe72af3",
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        3520,
+        384
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "T5PbwUcWhbq1wvmz",
+          "name": "Airtable Personal Access Token account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Rapid Pub - LinkedIn Post Generator\n\n### Workflow Overview\n1. Trigger : Tous les lundis a 8h\n2. Collecte : Scraping LinkedIn + RSS + Contenus client\n3. Analyse IA : Tendances et bonnes pratiques\n4. Generation : 10 posts varies\n5. Scoring : Evaluation du potentiel\n6. Visuels : Prompts + generation DALL-E\n7. Stockage : Airtable + Cloudinary\n\n### Configuration requise\n- Credentials Apify (HTTP Header Auth)\n- Credentials Anthropic\n- Credentials Airtable\n- Cloudinary : remplacer YOUR_CLOUD_NAME\n- Selectionner les bases/tables Airtable",
+        "height": 476,
+        "width": 414,
+        "color": 5
+      },
+      "id": "c400729b-5df9-47d5-a936-8c3d8b1383e5",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## COLLECTE DE DONNEES\n\n4 sources paralleles:\n- LinkedIn (Apify)\n- RSS feeds (4 sources)\n- Contenus client (Airtable)\n\nLe scraping Apify prend environ 60s",
+        "height": 264,
+        "width": 280,
+        "color": 3
+      },
+      "id": "2f1fb335-b78c-49a9-8e15-d7941456e98b",
+      "name": "Collecte",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        304,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## GENERATION IA\n\n1. Analyse : Identifie tendances\n2. Generation : 10 posts varies\n3. Scoring : Note chaque post\n4. Prompts : Images\n5. Images : Generation visuelle",
+        "height": 196,
+        "width": 280,
+        "color": 4
+      },
+      "id": "3f946b21-9770-4c92-a820-1af1a38f0cbf",
+      "name": "IA",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STOCKAGE\n\n- Cloudinary : Images\n- Airtable : Posts complets\n- Logs : Suivi executions\n\nPret pour validation client",
+        "height": 192,
+        "width": 280,
+        "color": 6
+      },
+      "id": "d27e025d-9892-4b0f-9b29-57f087e61171",
+      "name": "Stockage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "kfiWbq3boy3dWKbiL",
+          "mode": "id"
+        },
+        "customBody": "{\n  \"searchUrls\": [\n    \"https://www.linkedin.com/company/printoclock/posts/\",\n    \"https://www.linkedin.com/company/exaprint/posts/\",\n    \"https://www.linkedin.com/company/helloprint/posts/\",\n    \"https://www.linkedin.com/company/vistaprint/posts/\",\n    \"https://www.linkedin.com/company/imprimerie-a-reaction/posts/\"\n  ],\n  \"maxResults\": 30,\n  \"proxy\": {\n    \"useApifyProxy\": true\n  }\n}",
+        "timeout": 120
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        400,
+        208
+      ],
+      "id": "72f91cd0-ec2d-4733-876b-d7ee26cede28",
+      "name": "Run an Actor",
+      "credentials": {
+        "apifyApi": {
+          "id": "cqelAIvcd5LVMlPK",
+          "name": "Apify account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=imprimerie&hl=fr",
+        "options": {}
+      },
+      "id": "4ff3ffc1-3cb6-4f5f-858c-8f1b2cbc6c5e",
+      "name": "RSS Feed Read",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        656
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lundi 8h": {
+      "main": [
+        [
+          {
+            "node": "RSS GraphiLine",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS PrintWeek",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Feed Read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS FESPA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Contenus Client",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Run an Actor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Manuel": {
+      "main": [
+        [
+          {
+            "node": "RSS GraphiLine",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS PrintWeek",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Feed Read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS FESPA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Contenus Client",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Run an Actor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS GraphiLine": {
+      "main": [
+        [
+          {
+            "node": "Merge RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS PrintWeek": {
+      "main": [
+        [
+          {
+            "node": "Merge RSS",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RSS FESPA": {
+      "main": [
+        [
+          {
+            "node": "Merge RSS",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge RSS": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Contenus Client": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Sources": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean and Dedupe": {
+      "main": [
+        [
+          {
+            "node": "Analyse Tendances",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse Tendances": {
+      "main": [
+        [
+          {
+            "node": "Generation 10 Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generation 10 Posts": {
+      "main": [
+        [
+          {
+            "node": "Parse Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Posts": {
+      "main": [
+        [
+          {
+            "node": "Scoring Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scoring Post": {
+      "main": [
+        [
+          {
+            "node": "Merge Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Score": {
+      "main": [
+        [
+          {
+            "node": "Genere Prompts Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Genere Prompts Images": {
+      "main": [
+        [
+          {
+            "node": "Merge Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Prompts": {
+      "main": [
+        [
+          {
+            "node": "DALL-E Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DALL-E Generate": {
+      "main": [
+        [
+          {
+            "node": "Upload Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Prepare Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Airtable": {
+      "main": [
+        [
+          {
+            "node": "Save to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Airtable": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Feed Read": {
+      "main": [
+        [
+          {
+            "node": "Merge RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2ff492fb-f8ba-44d1-85e1-b1b732296cd2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "44c2e7619227aa5cb268fc7ca1b361e7cb643218ae956db89d4ec8022b4ea57a"
+  },
+  "id": "MrfXjZSg3POW7iRD",
+  "tags": [
+    {
+      "createdAt": "2026-01-26T11:21:05.814Z",
+      "updatedAt": "2026-01-26T11:21:05.814Z",
+      "id": "hTLc30IaQtwzQiOK",
+      "name": "RAPIDPUB"
+    }
+  ]
+}

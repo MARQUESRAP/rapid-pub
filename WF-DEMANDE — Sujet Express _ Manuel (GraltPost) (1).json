@@ -1,0 +1,438 @@
+{
+  "name": "WF-DEMANDE — Sujet Express / Manuel (GraltPost)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "graltpost-demande",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "demande-webhook",
+      "name": "🔗 Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -496,
+        400
+      ],
+      "webhookId": "graltpost-demande",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "demande-manual",
+      "name": "▶️ Test Manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Webhook body ou test manuel\nconst body = input.body || input;\n\nconst type = body.type || 'express';\nconst sujetTexte = body.sujet_texte || body.titre || body.message || '';\nconst notes = body.notes || '';\nconst sujetManuelId = body.sujet_manuel_id || '';\n\nreturn [{\n  json: {\n    type,\n    sujet_texte: sujetTexte,\n    notes,\n    sujet_manuel_id: sujetManuelId\n  }\n}];\n"
+      },
+      "id": "demande-prepare",
+      "name": "🔄 Préparer Requête",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "sujets_manuels",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.sujet_manuel_id }}"
+            }
+          ]
+        }
+      },
+      "id": "demande-read-manuel",
+      "name": "📋 Lire Sujet Manuel",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        160,
+        304
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "sCobzhNBDfPGUQxd",
+          "name": "LINKEDIN AUTO"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "sujets_manuels",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "statut",
+              "condition": "eq",
+              "keyValue": "disponible"
+            }
+          ]
+        }
+      },
+      "id": "demande-fallback-manuel",
+      "name": "🔍 Lire Premier Sujet Dispo",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        160,
+        560
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "sCobzhNBDfPGUQxd",
+          "name": "LINKEDIN AUTO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Détecter quel chemin a été emprunté\nlet request = null;\ntry {\n  request = $('🔄 Préparer Requête').first().json;\n} catch(e) {\n  request = null;\n}\n\nlet titre = '';\nlet notes = '';\nlet sujetManuelId = '';\nlet source = 'demande';\n\nif (request && request.type === 'manuel') {\n  // Mode webhook + sujet manuel\n  let manuelData = null;\n  try {\n    manuelData = $('📋 Lire Sujet Manuel').first().json;\n    if (!manuelData || !manuelData.titre) manuelData = null;\n  } catch(e) { manuelData = null; }\n  \n  if (manuelData && manuelData.titre) {\n    titre = manuelData.titre;\n    notes = manuelData.notes || '';\n    sujetManuelId = manuelData.id || '';\n    source = 'manuel';\n  } else {\n    throw new Error('Sujet manuel non trouv\\u00e9');\n  }\n} else if (request && request.type === 'express') {\n  // Mode webhook + texte libre\n  titre = request.sujet_texte;\n  notes = request.notes || '';\n  source = 'demande';\n  if (!titre) throw new Error('sujet_texte requis en mode express');\n} else {\n  // Mode test manuel : lire le premier sujet dispo\n  let fallback = null;\n  try {\n    fallback = $('🔍 Lire Premier Sujet Dispo').first().json;\n  } catch(e) { fallback = null; }\n  \n  // Ou l'input direct\n  if (!fallback || !fallback.titre) {\n    fallback = $input.first().json;\n  }\n  \n  if (fallback && fallback.titre) {\n    titre = fallback.titre;\n    notes = fallback.notes || '';\n    sujetManuelId = fallback.id || '';\n    source = 'manuel';\n  } else {\n    throw new Error('Aucun sujet trouv\\u00e9');\n  }\n}\n\nreturn [{\n  json: {\n    titre,\n    notes,\n    sujet_manuel_id: sujetManuelId,\n    source\n  }\n}];"
+      },
+      "id": "demande-normalize",
+      "name": "⚙️ Normaliser Sujet",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "mode": "id",
+          "value": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Transforme ce sujet en suggestion de post LinkedIn lead magnet COMPLÈTE pour Raph (Gralt).\n\n--- SUJET ---\nTitre/Idée : {{ $json.titre }}\nNotes : {{ $json.notes }}\n\n--- CE QUE TU DOIS GÉNÉRER ---\n\nCrée une suggestion complète avec :\n1. Un TITRE accrocheur pour le post (pas le même que l'idée brute)\n2. Une DESCRIPTION de 2-3 phrases du contenu du post\n3. Un ANGLE spécifique et original\n4. Le TYPE de ressource lead magnet (notion = page Notion, pdf, template)\n5. Le NOM de la ressource (ex: \"Le Kit Anti-Chaos CRM\")\n6. La DESCRIPTION de la ressource (ce qu'elle contient concrètement, SANS liens)\n7. Un MOT-CLÉ CTA court et mémorable en MAJUSCULES\n8. Un SCORE d'engagement estimé (1-10)\n\n--- CONTEXTE RAPH ---\n- Consultant IA/automatisation pour PME, 4 mois d'activité, basé à Lille\n- Outils : n8n, Claude API, Supabase, Google Workspace\n- Cible : dirigeants PME, indépendants, managers opérationnels\n- Format : lead magnet (accroche → problème → pivot → valeur → punchline → CTA)\n\n--- RÈGLES ---\n- La ressource ne doit JAMAIS contenir de liens ou URLs\n- Le mot-clé CTA doit être 1 mot ou 2 max, en majuscules (ex: AUDIT, WORKFLOWS, TEMPLATE)\n- Le titre doit donner envie de cliquer, pas être générique\n- L'angle doit se différencier des posts classiques sur le sujet\n- Score réaliste : 6-9\n\n--- FORMAT DE SORTIE ---\nRéponds UNIQUEMENT en JSON valide, sans backticks :\n{\n  \"titre\": \"Titre accrocheur du post\",\n  \"description\": \"2-3 phrases décrivant le contenu du post\",\n  \"angle\": \"L'angle spécifique original\",\n  \"type_ressource\": \"notion\",\n  \"nom_ressource\": \"Nom de la ressource\",\n  \"desc_ressource\": \"Description détaillée du contenu de la ressource\",\n  \"mot_cle_cta\": \"MOTCLE\",\n  \"score_engagement\": 8\n}"
+            }
+          ]
+        },
+        "options": {
+          "system": "Tu es un stratège de contenu LinkedIn spécialisé en lead magnets pour la niche IA/automatisation PME.\n\nTu transformes des idées brutes en suggestions de posts complètes et engageantes pour Raph (Gralt), consultant IA/automatisation à Lille, 4 mois d'activité.\n\n=== POSTS QUI PERFORMENT (500-1100+ commentaires) ===\n\nVoici les posts lead magnet qui explosent dans la niche. Analyse leurs PATTERNS et reproduis-les :\n\n1. Hugo Dolfus (1116 commentaires) :\n\"Je viens de créer la meilleure bibliothèque de skills IA.\"\n→ Pattern : ANNONCE DE VALEUR directe. Pas de storytelling. Promesse immédiate.\n\n2. Alexis N'gabala (980 commentaires) :\n\"Quand tu quittes ChatGPT pour Claude...\"\n→ Pattern : VERSUS PROVOCANT. Opposition de deux outils. Promet une révélation.\n\n3. Michaël Amar (643 commentaires) :\n\"Tu lis encore des PDF de 500 pages pendant que d'autres digèrent la même info en 20 min ?\"\n→ Pattern : CONFRONTATION + SOLUTION. Interpelle sur une habitude obsolète.\n\n4. Thibault Besson-Magdelain (584 commentaires) :\n\"Je ne ferai plus jamais du SEO\"\n→ Pattern : STATEMENT CHOC. Phrase négative qui intrigue et force le clic.\n\n5. Clément Geynet (400 commentaires) :\nSystème offert + valeur massive détaillée avec liste de ce que contient la ressource.\n→ Pattern : VALEUR MASSIVE. Détail exhaustif de ce qu'offre la ressource.\n\nCe qui fait exploser l'engagement : la PROMESSE DE VALEUR GRATUITE dès l'accroche. Les gens doivent comprendre en 1 seconde qu'ils vont pouvoir récupérer quelque chose d'utile.\n\n=== CE QUI DIFFÉRENCIE RAPH ===\n\n1. PLUS COURT ET CONCIS : 1200-1600 caractères max\n2. PLUS DIRECT : Pas de longues introductions dramatiques\n3. PLUS AUTHENTIQUE : Pas de mise en scène exagérée\n4. TON DE POTE : Tutoiement naturel\n5. ZÉRO STORYTELLING EN ACCROCHE : L'accroche annonce la valeur, point\n6. PAS DE CHIFFRES EXAGÉRÉS : Raph a 4 mois d'activité, quelques clients\n\n=== ADN STYLISTIQUE DE RAPH ===\n\nTON : Tutoiement, direct, authentique, chaleureux. Pote tech.\nTICS : \"Concrètement, ça donne quoi ?\", \"Le résultat ?\", \"Le plus fou ?\", \"Donc j'ai créé...\"\nFORMATAGE : Phrases 3-8 mots, espace blanc, flèches → ↳, gras Unicode, émojis structurants.\n\n=== RÈGLES POUR LES SUGGESTIONS ===\n\n- Le titre doit utiliser un des 5 patterns gagnants ci-dessus\n- L'angle doit se différencier des posts classiques sur le sujet\n- La ressource doit être assez valuable pour justifier un commentaire public\n- Le CTA doit être 1-2 mots max, mémorable, en MAJUSCULES\n- JAMAIS de liens dans la description de la ressource\n- Score d'engagement réaliste (6-9, pas systématiquement 9-10)\n- Pense toujours : \"est-ce que quelqu'un commenterait pour obtenir cette ressource ?\"",
+          "maxTokens": 4096,
+          "temperature": 0.8
+        }
+      },
+      "id": "demande-claude",
+      "name": "🤖 Claude — Créer Suggestion",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        688,
+        400
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "3dRzxcNOsrgpYFjh",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function extractAnthropicText(json) {\n  if (json.text && typeof json.text === 'string' && json.text.trim().length > 0) return json.text;\n  if (Array.isArray(json.content)) {\n    const block = json.content.find(b => b.type === 'text' && b.text);\n    if (block) return block.text;\n  }\n  if (typeof json.content === 'string' && json.content.trim().length > 0) return json.content;\n  if (json.message && json.message.content) {\n    if (Array.isArray(json.message.content)) {\n      const block = json.message.content.find(b => b.type === 'text' && b.text);\n      if (block) return block.text;\n    }\n    if (typeof json.message.content === 'string') return json.message.content;\n  }\n  return JSON.stringify(json);\n}\n\nconst input = $input.first().json;\n\nlet context = null;\ntry { context = $('⚙️ Normaliser Sujet').first().json; } catch(e) { context = { source: 'demande', sujet_manuel_id: '' }; }\n\nlet responseText = extractAnthropicText(input);\nresponseText = responseText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\nlet data;\ntry {\n  data = JSON.parse(responseText);\n} catch(e) {\n  const m = responseText.match(/\\{[\\s\\S]*\\}/);\n  if (m) data = JSON.parse(m[0]);\n  else throw new Error('Parse error: ' + responseText.substring(0, 300));\n}\n\n// Calculer semaine ISO\nconst now = new Date();\nconst oneJan = new Date(now.getFullYear(), 0, 1);\nconst dayOfYear = Math.floor((now - oneJan) / 86400000) + 1;\nconst weekNum = Math.ceil((dayOfYear + oneJan.getDay()) / 7);\nconst semaine = now.getFullYear() + '-W' + String(weekNum).padStart(2, '0');\n\nreturn [{\n  json: {\n    titre: data.titre,\n    description: data.description,\n    angle: data.angle,\n    type_ressource: data.type_ressource || 'notion',\n    nom_ressource: data.nom_ressource,\n    desc_ressource: data.desc_ressource,\n    mot_cle_cta: (data.mot_cle_cta || 'RESSOURCE').toUpperCase(),\n    score_engagement: Math.min(10, Math.max(1, data.score_engagement || 7)),\n    source: context.source || 'demande',\n    statut: 'validee',\n    semaine\n  }\n}];"
+      },
+      "id": "demande-parse",
+      "name": "📝 Parser Suggestion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "suggestions",
+        "dataToSend": "autoMapInputData"
+      },
+      "id": "demande-save",
+      "name": "💾 Sauvegarder Suggestion",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        400
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "sCobzhNBDfPGUQxd",
+          "name": "LINKEDIN AUTO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "sujets_manuels",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('⚙️ Normaliser Sujet').first().json.sujet_manuel_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut",
+              "fieldValue": "utilise"
+            }
+          ]
+        }
+      },
+      "id": "demande-mark-used",
+      "name": "✅ Marquer Sujet Utilisé",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        400
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "sCobzhNBDfPGUQxd",
+          "name": "LINKEDIN AUTO"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"suggestion_id\": \"{{ $('💾 Sauvegarder Suggestion').first().json.id }}\",\n  \"titre\": \"{{ $('📝 Parser Suggestion').first().json.titre }}\",\n  \"mot_cle_cta\": \"{{ $('📝 Parser Suggestion').first().json.mot_cle_cta }}\",\n  \"message\": \"Suggestion cr\\u00e9\\u00e9e et valid\\u00e9e. Pr\\u00eate pour g\\u00e9n\\u00e9ration.\"\n}",
+        "options": {}
+      },
+      "id": "demande-respond",
+      "name": "📤 Répondre Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1952,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## WF-DEMANDE — Sujet Express / Manuel (GraltPost)\n\n**Trigger :** Webhook depuis l'app + test manuel\n**Input :** { type: 'express'|'manuel', sujet_texte: '...', sujet_manuel_id: 'uuid' }\n\n### Flux :\n1. Recevoir la demande (express = texte libre, manuel = depuis banque de sujets)\n2. Lire le sujet manuel si applicable\n3. Normaliser les données\n4. Claude transforme l'idée en suggestion complète\n5. Sauvegarder en tant que suggestion 'validee'\n6. Marquer le sujet manuel comme 'utilise'\n7. Répondre avec l'ID de la suggestion\n\n### Ensuite :\nL'app peut directement déclencher WF-GENERATION avec la suggestion_id retournée.\n\n### Credentials :\n- [x] Supabase (LINKEDIN AUTO)\n- [x] Anthropic (existant)\n\n### Tables alimentées :\n- suggestions (statut 'validee')\n- sujets_manuels (statut 'utilise')",
+        "height": 480,
+        "width": 500
+      },
+      "id": "demande-note",
+      "name": "📋 OVERVIEW WF-DEMANDE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        -96
+      ]
+    }
+  ],
+  "pinData": {
+    "▶️ Test Manuel": [
+      {
+        "json": {},
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "🔗 Webhook Trigger": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.srv1014748.hstgr.cloud",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "content-length": "2329",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+            "content-type": "application/json",
+            "origin": "http://localhost:3000",
+            "priority": "u=1, i",
+            "referer": "http://localhost:3000/",
+            "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.srv1014748.hstgr.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "6eee3e219948",
+            "x-real-ip": "172.18.0.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "message": "J'aimerais faire un poste sur le nombre de suppression de ChatGPT, au profit de Claude, je te donne le contenu d'un article que j'ai trouvé très intéressant, il faudrait le reprendre pour en faire un poste sur linkedIn. La ressource pourrait être un guide de comment bien utiliser Claude, avec des cas d'usage. Un guide complet de comment bien commencer avec Claude et avoir les bases pour commencer à travailler mieux qu'avec ChatGPT.\n\nContenu de la ressource intéressante :\nChatGPT : la chute que personne n'avait vu venir\nLe 28 février dernier, les désinstallations de ChatGPT aux États-Unis ont bondi de +295% en une seule journée.\nLes avis 1 étoile sur l'App Store quant à eux ont fait +775%. \nEt dans la foulée, Claude (l'app d'Anthropic) est passée N°1 sur l'App Store américain, détrônant ChatGPT pour la première fois.\nMais alors que s'est-il passé ?\nTout part d'une demande du gouvernement américain.\nLe Pentagone a d'abord approché Anthropic pour utiliser leur IA à des fins militaires.\nPotentiellement de la surveillance de masse et des systèmes d'armes autonomes.\nMais Anthropic, qui est pourtant une boîte américaine, a refusé catégoriquement. \nDario Amodei, le fondateur, a dit non.\nPas question de retirer les garde-fous de sécurité de Claude.\nLa réponse du gouvernement fût instantanée: Interdire Anthropic dans toutes les agences fédérales.\nLe Secrétaire à la Défense est même allé jusqu'à qualifier Anthropic de \"risque pour la sécurité nationale.\"\nMais du coup quel est le lien avec la désinstallation massive de ChatGPT ?\nEt bien c’est simple : OpenAI eux, ont sauté sur le contrat sans hésiter.\nLe résultat a été immédiat. Des millions d'utilisateurs américains ont désinstallé ChatGPT en signe de protestation. Et Claude a vu ses téléchargements exploser de +88%, ses utilisateurs gratuits augmenter de 60% et ses abonnés payants doubler.\n\nGraphique des téléchargements des apps Claude VS ChatGPT\nL'ironie de l’histoire ?\nSam Altman avait critiqué Anthropic il y a quelques semaines, qualifiant Claude de \"produit de riches\".\nSam a toujours souhaité que ChatGPT soit l’IA du “peuple”.\nSauf que quand le \"peuple\" apprend que son outil préféré collabore avec le Pentagone… il désinstalle."
+          },
+          "webhookUrl": "https://n8n.srv1014748.hstgr.cloud/webhook/graltpost-demande",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "🔗 Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "🔄 Préparer Requête",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "▶️ Test Manuel": {
+      "main": [
+        [
+          {
+            "node": "🔍 Lire Premier Sujet Dispo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔄 Préparer Requête": {
+      "main": [
+        [
+          {
+            "node": "📋 Lire Sujet Manuel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Lire Sujet Manuel": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Normaliser Sujet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Lire Premier Sujet Dispo": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Normaliser Sujet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Normaliser Sujet": {
+      "main": [
+        [
+          {
+            "node": "🤖 Claude — Créer Suggestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Claude — Créer Suggestion": {
+      "main": [
+        [
+          {
+            "node": "📝 Parser Suggestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 Parser Suggestion": {
+      "main": [
+        [
+          {
+            "node": "💾 Sauvegarder Suggestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Sauvegarder Suggestion": {
+      "main": [
+        [
+          {
+            "node": "✅ Marquer Sujet Utilisé",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Marquer Sujet Utilisé": {
+      "main": [
+        [
+          {
+            "node": "📤 Répondre Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "19d2ba0f-67d4-4add-911b-e2033bea050a",
+  "meta": {
+    "instanceId": "44c2e7619227aa5cb268fc7ca1b361e7cb643218ae956db89d4ec8022b4ea57a"
+  },
+  "id": "bMXypaxvneagaMXr",
+  "tags": [
+    {
+      "updatedAt": "2026-02-20T15:52:07.873Z",
+      "createdAt": "2026-02-20T15:52:07.873Z",
+      "id": "4eE2lS1Mi2c8lfbU",
+      "name": "LINKEDIN AUTO"
+    }
+  ]
+}

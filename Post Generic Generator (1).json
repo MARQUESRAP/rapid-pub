@@ -1,0 +1,923 @@
+{
+  "name": "Post Generic Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "==Tendances actuelles :\n{{ $('Analyse Tendances1').first().json.message?.content || ($('Analyse Tendances1').first().json.content?.[0]?.text || $('Analyse Tendances1').first().json.content) }}\n\n=== POSTS RECENTS (ANTI-REPETITION) ===\n{{ $('Format Anti Repetition').first().json.anti_repetition }}\n\nGenere 3 posts LinkedIn COURTS et PERCUTANTS pour Rapid Pub.\n\nREGLES :\n- 3 categories differentes, priorise celles absentes des posts recents\n- 800-1300 caracteres MAX par post (hook + corps + CTA)\n- UNE seule idee par post, va droit au but\n- Le corps ne doit JAMAIS contenir le hook ni le CTA\n- Utilise les 3 formats : tip actionnable, observation terrain, point de vue tranche\n- Ancre les exemples dans les secteurs cibles (restaurateur, artisan, commercant, agent immobilier...)\n- Stats credibles uniquement, sinon prefere les observations terrain\n\nJSON valide :\n{\n  \"posts\": [\n    {\n      \"id\": 1,\n      \"categorie\": \"educatif\",\n      \"titre_interne\": \"Titre court\",\n      \"hook\": \"Hook avec emoji (max 200 car)\",\n      \"corps\": \"Corps COURT sans hook ni CTA (max 800 car)\",\n      \"cta\": \"Question ouverte qui pousse a commenter\",\n      \"hashtags\": [\"#imprimerie\", \"#RapidPub\", \"#marketing\"],\n      \"format_visuel\": \"photo_realiste\",\n      \"idee_visuel\": \"Description courte du visuel\"\n    }\n  ]\n}\n"
+            }
+          ]
+        },
+        "options": {
+          "system": "Tu es un copywriter LinkedIn pour Rapid-Pub, imprimerie en ligne B2B avec impression express en 24h.\n\n=== IDENTITE (FAITS VERIFIES — ne jamais inventer au-dela) ===\n- Nom : Rapid-Pub (avec le tiret)\n- Fondee en 2009, basee a Comines (Nord de la France)\n- Equipe : 3 personnes — structure a taille humaine, proximite client reelle\n- Zone : toute la France (impression + livraison nationale)\n- Site : rapid-pub.com\n- Differenciateurs : Impression express 24h, Prix competitifs, Accompagnement personnalise, Qualite d'impression\n- Preuve sociale : 4,9/5 sur Trustpilot avec 910+ avis (chiffre utilisable tel quel)\n- Avis Google egalement disponibles\n- Clients : Associations/collectivites, Agences de com/marketing, Artisans/TPE, Commerces locaux, PME\n- Secteurs : Restauration/Hotellerie, Commerce/Retail, Immobilier, BTP/Artisanat, Sante/Bien-etre, Evenementiel\n- Decideurs : Le dirigeant/gerant ET le responsable marketing/com\n- Priorites clients : RAPIDITE et PRIX\n- Produits a promouvoir : Billetterie, Goodies (stylos, mugs, textiles), Affiches/Posters, Flyers/Depliants\n- Occasions d'achat : Lancement/ouverture, Evenement (salon, foire), Urgence/last minute\n- Objection principale : \"Je ne sais pas preparer mes fichiers\" → on accompagne\n- Sujets interdits : Politique, Concurrents (jamais citer ou comparer)\n\n=== REGLE ANTI-HALLUCINATION (CRITIQUE) ===\n- NE JAMAIS inventer de chiffres, certifications, labels ou engagements non listes ci-dessus\n- NE JAMAIS mentionner : encres vegetales, papier FSC, imprim'vert, bilan carbone, ou tout engagement ecologique (non confirme)\n- NE JAMAIS inventer de temoignages clients avec des noms ou entreprises reelles\n- Si tu utilises un chiffre ou une stat sectorielle, elle doit etre credible et verifiable. En cas de doute, prefere une observation terrain sans chiffre.\n- Les seuls chiffres surs : \"depuis 2009\", \"equipe de 3\", \"910+ avis Trustpilot\", \"4,9/5\", \"livraison 24h\"\n- Nous sommes en 2026.\n\n=== VOIX ===\n- \"on\", \"chez Rapid-Pub\", \"notre equipe\" — ton du collegue expert qui partage, PAS du professeur qui fait la lecon\n- Jamais de langage corporate froid\n- Anecdotes terrain, constats du quotidien, retours clients anonymises (sans noms inventes)\n\n=== REGLES ABSOLUES ===\n\n1. LONGUEUR : 800-1300 caracteres MAXIMUM (hook + corps + CTA inclus). Sois CONCIS.\n2. HOOK : Max 200 caracteres. Emoji + phrase choc/contrariante/chiffre precis. C'est ce qui decide si on clique \"voir plus\".\n3. STRUCTURE : Phrases courtes (8-12 mots max). Saut de ligne entre chaque idee. JAMAIS de paragraphe de plus de 2 lignes.\n4. UNE SEULE IDEE par post. Pas de liste de 5+ points. 3 points maximum si liste.\n5. CTA : Question ouverte simple qui pousse au COMMENTAIRE. Le commentaire = signal #1 de l'algorithme.\n6. Le champ \"corps\" ne doit JAMAIS contenir le hook ni le CTA. Ce sont des champs SEPARES.\n7. AUCUN lien externe dans le corps.\n8. Hashtags : 3-5 dont #RapidPub\n9. Emojis : 3-5 max par post, comme puces visuelles\n\n=== 3 FORMATS A UTILISER (rotation) ===\n\nFORMAT 1 — TIP UNIQUE ACTIONNABLE\nUNE seule astuce concrete que le lecteur peut appliquer immediatement.\nPas de liste exhaustive. Un tip, une explication courte, c'est tout.\nExemple d'angle : comment verifier son fichier en 5 sec, quel papier choisir pour un flyer, comment un QR code sur une affiche multiplie les visites.\n\nFORMAT 2 — OBSERVATION TERRAIN / CAS CONCRET\nUne mini-histoire realiste d'un client anonymise (PAS de nom invente).\n5-6 lignes max. Situation → probleme → solution Rapid-Pub → resultat.\nAncrer dans les secteurs cibles : un restaurateur, un artisan BTP, un agent immobilier, un organisateur d'evenements.\nFormuler comme : \"un de nos clients restaurateur\", \"un artisan qu'on accompagne\", etc.\n\nFORMAT 3 — POINT DE VUE TRANCHE\nUne affirmation contrariante ou contre-intuitive qui genere du debat.\nExpliquer en 3-4 lignes avec un exemple concret.\nLe CTA doit inviter au debat : \"D'accord ou pas d'accord ?\", \"Votre avis ?\"\n\n=== CE QUI NE MARCHE PAS (EVITER) ===\n- Posts fleuve de 2000+ caracteres\n- Listes de 5+ points (trop scolaire)\n- Ton professoral qui fait la lecon\n- Stats generiques sans ancrage terrain\n- \"Le print n'est pas mort\" (tout le monde le dit)\n- Posts qui parlent de tout sans conclusion concrete\n- Inventer des chiffres ou des engagements non confirmes\n\n=== CATEGORIES (rotation parmi 6) ===\n1. EDUCATIF : UN seul tip actionnable, pas une liste exhaustive\n2. ACTUALITE : Reaction courte a une news avec angle Rapid-Pub\n3. CAS_CONCRETS : Mini-histoire d'un client (anonymise, sans nom) avec resultat concret\n4. MYTHBUSTERS : Casser UN mythe en 3-4 lignes percutantes\n5. CHIFFRES_CHOC : UN chiffre + explication courte + question\n6. PREDICTIONS : UNE tendance + impact concret pour les pros\n",
+          "maxTokens": 4000,
+          "temperature": 0.8
+        }
+      },
+      "id": "29a6d9e4-f06e-45d0-b2d8-c4061f343a2e",
+      "name": "Generation 3 Posts",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        5056,
+        6416
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/gemini-3-pro-image-preview",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.prompt_image }}\",\n  \"aspect_ratio\": \"1:1\",\n  \"resolution\": \"2K\",\n  \"num_images\": 1,\n  \"output_format\": \"png\"\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6448,
+        6416
+      ],
+      "id": "4648cb97-d40f-43e9-b8ff-4f4224342a9f",
+      "name": "Nano Banana Pro",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gzFGtaoxzrlyP0vK",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputs = $input.all();\nconst postItems = $('Merge Prompts1').all();\n\nconst categorieMap = {\n  'educatif': 'Educatif',\n  'actualite': 'Actualite',\n  'cas_concrets': 'Cas_Concrets',\n  'mythbusters': 'Mythbusters',\n  'chiffres_choc': 'Chiffres_Choc',\n  'predictions': 'Predictions'\n};\n\nreturn inputs.map((input, index) => {\n  const post = postItems[index]?.json || {};\n\n  return {\n    json: {\n      titre_interne: post.titre_interne || '',\n      categorie: categorieMap[post.categorie?.toLowerCase()] || post.categorie || '',\n      hook: post.hook || '',\n      corps: post.corps || '',\n      cta: post.cta || '',\n      hashtags: Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags || ''),\n      format_visuel: post.format_visuel || '',\n      prompt_image: post.prompt_image || '',\n      image_url: input.json.secure_url || '',\n      score_ia: post.score_ia || 0,\n      score_hook: post.score_hook || 0,\n      score_commentaires: post.score_commentaires || 0,\n      score_originalite: post.score_originalite || 0,\n      score_valeur: post.score_valeur || 0,\n      score_structure: post.score_structure || 0,\n      points_forts: post.points_forts || '',\n      suggestions_ia: post.suggestions_ia || '',\n      statut: 'A_Valider',\n      created_at: new Date().toISOString(),\n      date_generation: new Date().toISOString()\n    },\n    pairedItem: { item: index }\n  };\n});\n"
+      },
+      "id": "94a0eacc-6b54-4b05-9ce1-82406529c538",
+      "name": "Prepare Supabase",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6800,
+        6416
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=printing+industry&hl=fr",
+        "options": {}
+      },
+      "id": "227be9b1-0d7c-4a8a-bf82-10eb84a7a62a",
+      "name": "RSS GraphiLine1",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        3824,
+        6400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://printmediacentr.com/feed/",
+        "options": {}
+      },
+      "id": "6ead2255-9786-41e2-b389-9790843e3c7f",
+      "name": "RSS PrintWeek1",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        3824,
+        6544
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.fespa.com/feed/",
+        "options": {}
+      },
+      "id": "1e1775e1-c5a6-41a9-815c-7bf0d43966af",
+      "name": "RSS FESPA1",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        3824,
+        6832
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === ACCUMULATEUR : attend les 6 flux RSS avant de traiter ===\nconst TOTAL_FEEDS = 6;\nconst STALE_TIMEOUT = 300000; // 5 min - reset si execution precedente a plante\n\nconst staticData = $getWorkflowStaticData('node');\nconst now = Date.now();\n\n// Reset si donnees perimees (execution precedente echouee)\nif (staticData.timestamp && (now - staticData.timestamp) > STALE_TIMEOUT) {\n  staticData.rawItems = [];\n  staticData.feedCount = 0;\n}\n\n// Initialiser\nif (!staticData.rawItems) {\n  staticData.rawItems = [];\n  staticData.feedCount = 0;\n}\n\n// Accumuler les items de ce flux RSS\nstaticData.timestamp = now;\nconst newItems = $input.all().map(i => i.json);\nstaticData.rawItems = staticData.rawItems.concat(newItems);\nstaticData.feedCount++;\n\n// Pas encore tous les flux ? Retourner vide (bloque la suite)\nif (staticData.feedCount < TOTAL_FEEDS) {\n  return [];\n}\n\n// === Tous les flux recus ! Traiter ===\nconst allItems = staticData.rawItems;\n\n// Reset pour la prochaine execution\nstaticData.rawItems = [];\nstaticData.feedCount = 0;\nstaticData.timestamp = null;\n\nfunction cleanText(text) {\n  if (!text) return '';\n  return text\n    .replace(/<[^>]*>/g, '')\n    .replace(/\\s+/g, ' ')\n    .trim()\n    .substring(0, 1000);\n}\n\nconst seen = new Set();\nconst cleaned = [];\n\nfor (const item of allItems) {\n  const key = (item.title || item.text || item.content || '').substring(0, 100);\n  if (key && !seen.has(key)) {\n    seen.add(key);\n    cleaned.push({\n      source: item.source || item.companyName || 'RSS',\n      title: cleanText(item.title || ''),\n      content: cleanText(item.content || item.text || item.description || ''),\n      engagement: item.likes || item.reactions || item.numLikes || 0,\n      comments: item.comments || item.numComments || 0,\n      date: item.pubDate || item.postedAt || item.date || new Date().toISOString(),\n      url: item.link || item.url || item.postUrl || ''\n    });\n  }\n}\n\nconst sorted = cleaned\n  .sort((a, b) => (b.engagement + b.comments) - (a.engagement + a.comments))\n  .slice(0, 40);\n\nreturn [{ json: { veille_data: sorted, count: sorted.length } }];"
+      },
+      "id": "ec266f67-b4a6-445d-88b1-0789c3f13d7c",
+      "name": "Clean and Dedupe1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4272,
+        6416
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Voici les donnees de veille collectees ({{ $json.count }} elements) :\n\n{{ JSON.stringify($json.veille_data, null, 2) }}\n\nAnalyse ces contenus et fournis tes insights en JSON avec cette structure :\n{\n  \"hooks_performants\": [\"exemple 1\", \"exemple 2\"],\n  \"formats_engageants\": [\"format 1 avec explication\"],\n  \"sujets_tendance\": [\"sujet 1\", \"sujet 2\"],\n  \"bonnes_pratiques\": [\"pratique 1\"],\n  \"erreurs_a_eviter\": [\"erreur 1\"],\n  \"mythes_a_casser\": [\"mythe 1 avec realite\"],\n  \"chiffres_marquants\": [\"stat 1 avec source si dispo\"],\n  \"predictions_tendances\": [\"prediction 1\"],\n  \"cas_concrets_sectoriels\": [\"use case 1 dans un secteur cible\"],\n  \"insights_cles\": \"Resume des insights principaux\"\n}"
+            }
+          ]
+        },
+        "options": {
+          "system": "Tu es un expert en analyse de contenu LinkedIn pour le secteur de l'imprimerie B2B.\n\nContexte : Rapid Pub cible des professionnels dans ces secteurs : Restauration/Hotellerie, Commerce/Retail, Immobilier, BTP/Artisanat, Sante/Bien-etre, Evenementiel.\nLes decideurs sont des dirigeants/gerants et des responsables marketing/com.\nTon attendu : Professionnel, expert, pedagogue.\n\nAnalyse les posts et actualites fournis et identifie :\n1. Les hooks qui generent le plus d'engagement aupres de pros/dirigeants\n2. Les formats de posts qui fonctionnent (liste, storytelling, question, stat choc...)\n3. Les sujets tendance dans le secteur print ET dans les secteurs cibles (restauration, commerce, immobilier, BTP, evenementiel)\n4. Les bonnes pratiques de formatting\n5. Les erreurs a eviter\n6. Les mythes/idees recues a deconstruire (notamment sur le print)\n7. Les chiffres/stats marquants sur le print et la com locale\n8. Les predictions/tendances futures\n9. Les cas concrets/use cases de print reussi dans les secteurs cibles\n\nReponds en JSON structure.",
+          "maxTokens": 2000,
+          "temperature": 0.7
+        }
+      },
+      "id": "cf9943b7-3092-4011-b129-2028c9353d3b",
+      "name": "Analyse Tendances1",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        4496,
+        6416
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let content = $input.first().json.message?.content || (Array.isArray($input.first().json.content) ? $input.first().json.content[0].text : $input.first().json.content);\n\nif (typeof content === 'string') {\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '');\n  content = JSON.parse(content);\n}\n\nconst posts = content.posts || content;\n\nconst enrichedPosts = posts.map((post, index) => {\n  // Retirer le hook du début du corps s'il est dupliqué\n  if (post.corps && post.hook && post.corps.trim().startsWith(post.hook.trim())) {\n    post.corps = post.corps.trim().slice(post.hook.trim().length).trim();\n  }\n\n  return {\n    ...post,\n    date_generation: new Date().toISOString(),\n    statut: 'A_Valider',\n    score_ia: 0,\n    suggestions_ia: ''\n  };\n});\n\nreturn enrichedPosts.map(post => ({ json: post }));\n"
+      },
+      "id": "cd0992b3-773a-46b7-b4f1-ad45c0a115cb",
+      "name": "Parse Posts1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5360,
+        6416
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Hook: {{ $json.hook }}\nCorps: {{ $json.corps }}\nCTA: {{ $json.cta }}\n\nScoring JSON :\n"
+            }
+          ]
+        },
+        "options": {
+          "system": "Tu es un evaluateur de posts LinkedIn B2B pour Rapid Pub (imprimerie en ligne, cible : dirigeants et responsables marketing).\n\nEvalue ce post sur 5 criteres (note de 1 a 10) et donne une suggestion courte si le score est faible.\n\nCriteres :\n1. score_hook : Les 3 premieres lignes donnent-elles envie de cliquer \"voir plus\" ?\n2. score_commentaires : Le CTA pousse-t-il a commenter ?\n3. score_originalite : L'angle est-il frais ou deja vu ?\n4. score_valeur : Le lecteur apprend-il quelque chose d'utile ?\n5. score_structure : Le post est-il bien aere et lisible sur mobile ?\n\nMoyenne attendue : ~7. Un 8+ doit etre rare.\n\nReponds UNIQUEMENT en JSON :\n{\n  \"score_hook\": 7,\n  \"score_commentaires\": 7,\n  \"score_originalite\": 7,\n  \"score_valeur\": 7,\n  \"score_structure\": 7,\n  \"score_final\": 7,\n  \"suggestions\": \"Une ou deux phrases max si amelioration necessaire, sinon vide\"\n}\n",
+          "maxTokens": 1000,
+          "temperature": 0.3
+        }
+      },
+      "id": "a4fa5e5c-e13a-41d0-803e-f08fc97c97da",
+      "name": "Scoring Post1",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        5536,
+        6416
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst parsedPosts = $('Parse Posts1').all();\n\nreturn items.map((item, index) => {\n  const post = parsedPosts[index]?.json || {};\n  let scoreData = item.json.message?.content || (Array.isArray(item.json.content) ? item.json.content[0].text : item.json.content) || item.json;\n\n  if (typeof scoreData === 'string') {\n    scoreData = scoreData.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n    try {\n      scoreData = JSON.parse(scoreData);\n    } catch (e) {\n      // JSON tronqué : extraire les scores avec regex\n      const extract = (key) => {\n        const match = scoreData.match(new RegExp(`\"${key}\"\\\\s*:\\\\s*([\\\\d.]+)`));\n        return match ? parseFloat(match[1]) : 0;\n      };\n      scoreData = {\n        score_hook: extract('score_hook'),\n        score_commentaires: extract('score_commentaires'),\n        score_originalite: extract('score_originalite'),\n        score_valeur: extract('score_valeur'),\n        score_structure: extract('score_structure'),\n        score_final: extract('score_final'),\n        points_forts: '',\n        suggestions: ''\n      };\n      if (!scoreData.score_final) {\n        const scores = [scoreData.score_hook, scoreData.score_commentaires, scoreData.score_originalite, scoreData.score_valeur, scoreData.score_structure].filter(s => s > 0);\n        scoreData.score_final = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 7;\n      }\n    }\n  }\n\n  return {\n    json: {\n      ...post,\n      score_ia: scoreData.score_final || 7,\n      score_hook: scoreData.score_hook || 0,\n      score_commentaires: scoreData.score_commentaires || 0,\n      score_originalite: scoreData.score_originalite || 0,\n      score_valeur: scoreData.score_valeur || 0,\n      score_structure: scoreData.score_structure || 0,\n      points_forts: scoreData.points_forts || '',\n      suggestions_ia: scoreData.suggestions || ''\n    }\n  };\n});\n"
+      },
+      "id": "4f40370b-cea7-46e5-b5c9-1b00e6397b40",
+      "name": "Merge Score1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5824,
+        6416
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Genere un prompt d'image optimise pour Nano Banana Pro.\n\nPOST LINKEDIN :\n- Categorie : {{ $json.categorie }}\n- Titre : {{ $json.titre_interne }}\n- Hook : {{ $json.hook }}\n- Theme principal : {{ $json.corps }}\n- Idee visuel suggeree : {{ $json.idee_visuel }}\n\nLe visuel doit etre REALISTE (style photo pro), EPURE (peu ou pas de texte), avec des PERSONNAGES dans une situation naturelle. Format carre (1:1).\n\nReponds uniquement en JSON valide."
+            }
+          ]
+        },
+        "options": {
+          "system": "Tu es un expert en generation de prompts pour Nano Banana Pro (Gemini 3 Pro Image), specialise dans la creation de visuels realistes et naturels.\n\nTA MISSION : Generer un prompt d'image REALISTE et EPUREE pour chaque post LinkedIn de Rapid Pub.\n\n=== FORCES DE NANO BANANA PRO ===\n- Excellent pour les scenes realistes avec personnages\n- Comprend les instructions complexes et detaillees\n- Peut creer des images photoréalistes de haute qualite\n\n=== CHARTE GRAPHIQUE RAPID PUB ===\n\nCouleurs (a integrer subtilement dans la scene, PAS en aplat) :\n- Orange principal : #E94E1B (un objet, un vetement, un element du decor)\n- Vert accent : #A4C639 (une plante, un detail subtil)\n\nStyle visuel OBLIGATOIRE :\n- Style PHOTOGRAPHIQUE realiste, comme une vraie photo prise par un photographe pro\n- Personnages realistes dans des situations professionnelles naturelles\n- PAS de flat design, PAS d'illustrations, PAS d'infographies, PAS de 3D stylise\n- PAS de texte dans l'image sauf si absolument necessaire (1-3 mots MAXIMUM)\n- Composition AEREE avec beaucoup d'espace vide (espace negatif)\n- Eclairage naturel, doux, professionnel\n- Profondeur de champ (arriere-plan flou, sujet net)\n- Ambiance lumineuse et chaleureuse\n\n=== CE QU'IL FAUT MONTRER ===\n- Des PERSONNAGES realistes (professionnels, artisans, commercants, dirigeants) dans leur contexte de travail\n- Des scenes du quotidien professionnel en lien avec le sujet du post\n- Des produits imprimes (flyers, cartes de visite, affiches) tenus en main ou poses naturellement dans le decor\n- Des interactions humaines naturelles (reunion, echange, travail)\n\n=== CE QU'IL FAUT EVITER ABSOLUMENT ===\n- Texte lourd dans l'image (pas de titres, pas de listes, pas de bullet points)\n- Images surchargees avec trop d'elements\n- Style \"clip art\" ou illustration plate\n- Visuels qui ressemblent a du contenu genere par IA (trop parfait, trop symetrique, trop lisse)\n- Fonds de couleur unie artificiels\n\n=== REGLES PAR CATEGORIE ===\n\n1. EDUCATIF → Professionnel qui montre/explique quelque chose, gros plan sur ses mains avec un document imprime\n2. ACTUALITE → Scene professionnelle en contexte, equipe au travail, ambiance moderne\n3. CAS_CONCRETS → Mise en situation realiste du metier concerne (restaurateur, commercant, artisan) avec supports imprimes\n4. MYTHBUSTERS → Professionnel avec une expression confiante/surprise, decor d'imprimerie ou de bureau\n5. CHIFFRES_CHOC → Gros plan sur un detail revelateur (un flyer tenu en main, un comptoir avec des cartes de visite)\n6. PREDICTIONS → Scene de travail moderne, technologie et print qui coexistent\n\n=== FORMAT DE SORTIE (JSON) ===\n\n{\n  \"prompt_image\": \"Le prompt COMPLET pour Nano Banana Pro en anglais\",\n  \"format_visuel\": \"photo_realiste\",\n  \"include_text\": false,\n  \"text_to_include\": \"\"\n}\n\n=== STRUCTURE DU PROMPT ===\n\n1. \"Realistic professional photograph, natural lighting\"\n2. Description de la scene avec personnage(s) et leur action\n3. Details du decor (lieu, objets, ambiance)\n4. Eclairage : \"soft natural daylight\", \"warm ambient light\"\n5. Composition : \"shallow depth of field f/2.8\", \"airy composition with negative space\"\n6. Touches subtiles de couleurs Rapid Pub (un objet orange, une plante verte)\n7. \"Shot on Canon EOS R5, 85mm lens, professional commercial photography\"\n8. Si texte necessaire (rare) : 1-3 mots max en francais\n\n=== REGLE ABSOLUE ===\nL'image doit ressembler a une VRAIE PHOTO professionnelle, pas a une illustration IA.\nPrivilegier les personnages, les scenes humaines, et la simplicite visuelle.\nLe texte dans l'image doit etre MINIMAL ou ABSENT.\n",
+          "maxTokens": 2000,
+          "temperature": 0.8
+        }
+      },
+      "id": "9cbe45e2-4ec4-4b9d-ba7a-17ecaed19dae",
+      "name": "Genere Prompts Images1",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        5984,
+        6416
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst mergedScores = $('Merge Score1').all();\n\nreturn items.map((item, index) => {\n  const post = mergedScores[index]?.json || {};\n  let promptData = item.json.message?.content || (Array.isArray(item.json.content) ? item.json.content[0].text : item.json.content) || item.json;\n\n  if (typeof promptData === 'string') {\n    promptData = promptData.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n    promptData = JSON.parse(promptData);\n  }\n\n  return {\n    json: {\n      ...post,\n      format_visuel: promptData.format_visuel || 'illustration',\n      prompt_image: promptData.prompt_image || '',\n      include_text: promptData.include_text || false,\n      text_to_include: promptData.text_to_include || ''\n    }\n  };\n});\n"
+      },
+      "id": "7d43984b-ee90-4184-befd-fdb96bc939e1",
+      "name": "Merge Prompts1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6272,
+        6416
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dcxj1nknb/image/upload",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"file\": \"{{ $json.images[0].url }}\",\n  \"upload_preset\": \"rapid-pub-linkedin\"\n}",
+        "options": {}
+      },
+      "id": "9114986b-86b5-40ea-9d9e-79a5a3e789d1",
+      "name": "Upload Cloudinary1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6624,
+        6416
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=imprimerie&hl=fr",
+        "options": {}
+      },
+      "id": "dc61bfe0-d73b-4470-b533-f983102aba60",
+      "name": "RSS Feed Read1",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        3824,
+        6688
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=restauration+hotellerie+communication+print&hl=fr",
+        "options": {}
+      },
+      "id": "e2a0cee2-1ae3-4a50-8660-342638384155",
+      "name": "RSS Restauration",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        3824,
+        6976
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=evenementiel+salon+foire+communication+imprimerie&hl=fr",
+        "options": {}
+      },
+      "id": "90bfc872-fe9f-4ac0-806b-642415c3a104",
+      "name": "RSS Evenementiel",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        3824,
+        7120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "posts",
+        "limit": 20,
+        "filterType": "string",
+        "filterString": "order=created_at.desc"
+      },
+      "id": "cbb67161-7713-4caf-9831-fc193d8ff630",
+      "name": "Get Recent Posts",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3824,
+        6096
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $input.all();\n\n// Si aucun post ou erreur Supabase, retourner un message par defaut\nif (!posts || posts.length === 0 || !posts[0].json.id) {\n  return [{ json: {\n    anti_repetition: 'Aucun post recent en base. Libre choix des sujets et categories.',\n    categories_recentes: []\n  } }];\n}\n\nconst summary = posts.map(p => {\n  const j = p.json;\n  return `- [${j.categorie || 'N/A'}] ${j.titre_interne || 'Sans titre'} | Hook: ${(j.hook || '').substring(0, 80)}`;\n}).join('\\n');\n\nconst categories = posts\n  .map(p => p.json.categorie?.toLowerCase())\n  .filter(Boolean);\n\nconst categoryCounts = {};\ncategories.forEach(c => { categoryCounts[c] = (categoryCounts[c] || 0) + 1; });\n\nconst categoryInfo = Object.entries(categoryCounts)\n  .map(([cat, count]) => `${cat}: ${count} fois`)\n  .join(', ');\n\nreturn [{ json: {\n  anti_repetition: `Voici les ${posts.length} derniers posts generes. NE REPETE PAS ces sujets, angles ou hooks.\\n\\nCategories utilisees recemment : ${categoryInfo}\\n\\nPosts recents :\\n${summary}`,\n  categories_recentes: categories\n} }];"
+      },
+      "id": "76ced2aa-e4a4-40cb-8760-0807047fd4ef",
+      "name": "Format Anti Repetition",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4192,
+        6096
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "e9bc8468-bb33-4d1f-9e43-0f81e58e4351",
+      "name": "Merge Before Generation",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        4752,
+        6320
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "posts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "titre_interne",
+              "fieldValue": "={{ $json.titre_interne }}"
+            },
+            {
+              "fieldId": "categorie",
+              "fieldValue": "={{ $json.categorie }}"
+            },
+            {
+              "fieldId": "hook",
+              "fieldValue": "={{ $json.hook }}"
+            },
+            {
+              "fieldId": "corps",
+              "fieldValue": "={{ $json.corps }}"
+            },
+            {
+              "fieldId": "cta",
+              "fieldValue": "={{ $json.cta }}"
+            },
+            {
+              "fieldId": "hashtags",
+              "fieldValue": "={{ $json.hashtags }}"
+            },
+            {
+              "fieldId": "image_url",
+              "fieldValue": "={{ $json.image_url }}"
+            },
+            {
+              "fieldId": "score_ia",
+              "fieldValue": "={{ $json.score_ia }}"
+            },
+            {
+              "fieldId": "score_hook",
+              "fieldValue": "={{ $json.score_hook }}"
+            },
+            {
+              "fieldId": "score_commentaires",
+              "fieldValue": "={{ $json.score_commentaires }}"
+            },
+            {
+              "fieldId": "score_originalite",
+              "fieldValue": "={{ $json.score_originalite }}"
+            },
+            {
+              "fieldId": "score_valeur",
+              "fieldValue": "={{ $json.score_valeur }}"
+            },
+            {
+              "fieldId": "score_structure",
+              "fieldValue": "={{ $json.score_structure }}"
+            },
+            {
+              "fieldId": "points_forts",
+              "fieldValue": "={{ $json.points_forts }}"
+            },
+            {
+              "fieldId": "suggestions_ia",
+              "fieldValue": "={{ $json.suggestions_ia }}"
+            },
+            {
+              "fieldId": "statut",
+              "fieldValue": "a_valider"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $json.created_at }}"
+            },
+            {
+              "fieldId": "date_generation",
+              "fieldValue": "={{ $json.date_generation }}"
+            },
+            {
+              "fieldId": "prompt_image",
+              "fieldValue": "={{ $json.prompt_image }}"
+            },
+            {
+              "fieldId": "format_visuel",
+              "fieldValue": "={{ $json.format_visuel }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6976,
+        6416
+      ],
+      "id": "82356e9e-e846-4a71-843a-3871c071341d",
+      "name": "Create a row2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "logs_workflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "date_execution",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "statut",
+              "fieldValue": "Succes"
+            },
+            {
+              "fieldId": "posts_generes",
+              "fieldValue": "={{ $items().length }}"
+            },
+            {
+              "fieldId": "images_generees",
+              "fieldValue": "={{ $items().length }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        7152,
+        6416
+      ],
+      "id": "8c2d821a-ed9a-4128-9a11-b28a09310c8c",
+      "name": "Create a row3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "209b7faf-f2a4-43a0-8cd1-5244b1ee7c1e",
+      "name": "Lundi 7h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        3472,
+        6400
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "raphael@gralt.fr",
+        "toEmail": "contact@rapid-pub.com",
+        "subject": "Vos nouveaux posts LinkedIn sont prêts !",
+        "html": "<div style=\"font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;\">\n\n  <h2 style=\"color: #E94E1B;\">📬 Vos posts LinkedIn de la semaine sont prêts !</h2>\n\n  <p>Bonjour,</p>\n\n  <p>On vient de préparer <strong>4 nouveaux posts</strong> pour votre page LinkedIn.<br>\n  Ils n'attendent plus que votre validation !</p>\n\n  <p>Au programme cette semaine :</p>\n  <ul>\n    <li>✍️ Des textes prêts à publier</li>\n    <li>🎨 Des visuels générés sur-mesure</li>\n    <li>📊 Un scoring pour chaque post</li>\n  </ul>\n\n  <p>\n    <a href=\"https://linkedin-manager-umber.vercel.app/dashboard\"\n       style=\"display: inline-block; background-color: #E94E1B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;\">\n      Voir mes posts →\n    </a>\n  </p>\n\n  <p style=\"color: #888; font-size: 13px; margin-top: 30px;\">\n    💡 Vous pouvez modifier les textes et les visuels directement depuis l'application avant publication.\n  </p>\n\n</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        7344,
+        6416
+      ],
+      "id": "7bc2982d-1f78-4b2b-8279-e60a84af0414",
+      "name": "Send an Email",
+      "webhookId": "2edfe30a-3aa9-4af3-8cb0-cd2d1ddddd77",
+      "executeOnce": true,
+      "credentials": {
+        "smtp": {
+          "id": "edDVL1R3XKmzWNwP",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Lundi 7h": [
+      {
+        "json": {
+          "timestamp": "2026-03-09T07:00:15.056+01:00",
+          "Readable date": "March 9th 2026, 7:00:15 am",
+          "Readable time": "7:00:15 am",
+          "Day of week": "Monday",
+          "Year": "2026",
+          "Month": "March",
+          "Day of month": "09",
+          "Hour": "07",
+          "Minute": "00",
+          "Second": "15",
+          "Timezone": "Europe/Berlin (UTC+01:00)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Generation 3 Posts": {
+      "main": [
+        [
+          {
+            "node": "Parse Posts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nano Banana Pro": {
+      "main": [
+        [
+          {
+            "node": "Upload Cloudinary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Supabase": {
+      "main": [
+        [
+          {
+            "node": "Create a row2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS GraphiLine1": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS PrintWeek1": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS FESPA1": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean and Dedupe1": {
+      "main": [
+        [
+          {
+            "node": "Analyse Tendances1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse Tendances1": {
+      "main": [
+        [
+          {
+            "node": "Merge Before Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Posts": {
+      "main": [
+        [
+          {
+            "node": "Format Anti Repetition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Anti Repetition": {
+      "main": [
+        [
+          {
+            "node": "Merge Before Generation",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Before Generation": {
+      "main": [
+        [
+          {
+            "node": "Generation 3 Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Posts1": {
+      "main": [
+        [
+          {
+            "node": "Scoring Post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scoring Post1": {
+      "main": [
+        [
+          {
+            "node": "Merge Score1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Score1": {
+      "main": [
+        [
+          {
+            "node": "Genere Prompts Images1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Genere Prompts Images1": {
+      "main": [
+        [
+          {
+            "node": "Merge Prompts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Prompts1": {
+      "main": [
+        [
+          {
+            "node": "Nano Banana Pro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Cloudinary1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Feed Read1": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Restauration": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Evenementiel": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row2": {
+      "main": [
+        [
+          {
+            "node": "Create a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lundi 7h": {
+      "main": [
+        [
+          {
+            "node": "RSS GraphiLine1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS PrintWeek1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Feed Read1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS FESPA1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Restauration",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Evenementiel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Recent Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row3": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "15a289fc-387e-48d0-a1e6-fd0c505a1e2c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c68d0e75da974712b0aa88aaeec1176d721c357e16ef5838f19fd54163f6cbd7"
+  },
+  "id": "tVTKwO1ZvB8CnQ0l",
+  "tags": [
+    {
+      "updatedAt": "2026-02-02T16:12:00.859Z",
+      "createdAt": "2026-02-02T16:12:00.859Z",
+      "id": "Fj19eWa2ctdMfBWd",
+      "name": "RAPIDPUB"
+    }
+  ]
+}

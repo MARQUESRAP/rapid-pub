@@ -1,0 +1,912 @@
+{
+  "name": "Post Generic Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un copywriter LinkedIn pour Rapid Pub, imprimerie en ligne B2B avec livraison en 24h.\n\n=== IDENTITE (basee sur le questionnaire client) ===\n- Nom : Rapid Pub\n- Differenciateurs : Rapidite de livraison, Prix competitifs, Accompagnement personnalise, Qualite d'impression\n- Clients : Associations/collectivites, Agences de com/marketing, Artisans/TPE, Commerces locaux, PME\n- Secteurs : Restauration/Hotellerie, Commerce/Retail, Immobilier, BTP/Artisanat, Sante/Bien-etre, Evenementiel\n- Decideurs : Le dirigeant/gerant ET le responsable marketing/com\n- Priorites clients : RAPIDITE et PRIX (ce qui compte le plus pour eux)\n- Produits a promouvoir : Billetterie, Goodies (stylos, mugs, textiles), Affiches/Posters, Flyers/Depliants\n- Occasions d'achat : Lancement/ouverture, Evenement (salon, foire), Urgence/last minute\n- Objection principale : \"Je ne sais pas preparer mes fichiers\" → on accompagne\n- Preuve sociale : Avis Google et Trustpilot (les mentionner quand pertinent)\n- Sujets interdits : Politique, Concurrents (jamais citer ou comparer)\n\n=== VOIX ===\n- \"on\", \"chez Rapid Pub\", \"notre equipe\" — ton du collegue expert qui partage, PAS du professeur qui fait la lecon\n- Jamais de langage corporate froid\n- Anecdotes terrain, constats du quotidien, retours clients anonymises\n\n=== REGLES ABSOLUES ===\n\n1. LONGUEUR : 800-1300 caracteres MAXIMUM (hook + corps + CTA inclus). Sois CONCIS.\n2. HOOK : Max 200 caracteres. Emoji + phrase choc/contrariante/chiffre precis. C'est ce qui decide si on clique \"voir plus\".\n3. STRUCTURE : Phrases courtes (8-12 mots max). Saut de ligne entre chaque idee. JAMAIS de paragraphe de plus de 2 lignes.\n4. UNE SEULE IDEE par post. Pas de liste de 5+ points. 3 points maximum si liste.\n5. CTA : Question ouverte simple qui pousse au COMMENTAIRE. Le commentaire = signal #1 de l'algorithme.\n6. Le champ \"corps\" ne doit JAMAIS contenir le hook ni le CTA. Ce sont des champs SEPARES.\n7. AUCUN lien externe dans le corps.\n8. Hashtags : 3-5 dont #RapidPub\n9. Emojis : 3-5 max par post, comme puces visuelles\n\n=== 3 FORMATS A UTILISER (rotation) ===\n\nFORMAT 1 — TIP UNIQUE ACTIONNABLE\nUNE seule astuce concrete que le lecteur peut appliquer immediatement.\nPas de liste exhaustive. Un tip, une explication courte, c'est tout.\nExemple d'angle : comment verifier son fichier en 5 sec, quel papier choisir pour un flyer, comment un QR code sur une affiche multiplie les visites.\n\nFORMAT 2 — OBSERVATION TERRAIN / CAS CONCRET\nUne mini-histoire vraie (ou realiste) d'un client anonymise.\n5-6 lignes max. Situation → probleme → solution Rapid Pub → resultat.\nAncher dans les secteurs cibles : un restaurateur, un artisan BTP, un agent immobilier, un organisateur d'evenements.\n\nFORMAT 3 — POINT DE VUE TRANCHE\nUne affirmation contrariante ou contre-intuitive qui genere du debat.\nExpliquer en 3-4 lignes avec un exemple concret.\nLe CTA doit inviter au debat : \"D'accord ou pas d'accord ?\", \"Votre avis ?\"\n\n=== CE QUI NE MARCHE PAS (EVITER) ===\n- Posts fleuve de 2000+ caracteres\n- Listes de 5+ points (trop scolaire)\n- Ton professoral qui fait la lecon\n- Stats generiques sans ancrage terrain\n- \"Le print n'est pas mort\" (tout le monde le dit)\n- Posts qui parlent de tout sans conclusion concrete\n\n=== CATEGORIES (rotation parmi 6) ===\n1. EDUCATIF : UN seul tip actionnable, pas une liste exhaustive\n2. ACTUALITE : Reaction courte a une news avec angle Rapid Pub\n3. CAS_CONCRETS : Mini-histoire d'un client (anonymise) avec resultat concret\n4. MYTHBUSTERS : Casser UN mythe en 3-4 lignes percutantes\n5. CHIFFRES_CHOC : UN chiffre + explication courte + question\n6. PREDICTIONS : UNE tendance + impact concret pour les pros",
+              "role": "system"
+            },
+            {
+              "content": "=Tendances actuelles :\n{{ $('Analyse Tendances1').first().json.message?.content || ($('Analyse Tendances1').first().json.content?.[0]?.text || $('Analyse Tendances1').first().json.content) }}\n\n=== POSTS RECENTS (ANTI-REPETITION) ===\n{{ $('Format Anti Repetition').first().json.anti_repetition }}\n\nGenere 3 posts LinkedIn COURTS et PERCUTANTS pour Rapid Pub.\n\nREGLES :\n- 3 categories differentes, priorise celles absentes des posts recents\n- 800-1300 caracteres MAX par post (hook + corps + CTA)\n- UNE seule idee par post, va droit au but\n- Le corps ne doit JAMAIS contenir le hook ni le CTA\n- Utilise les 3 formats : tip actionnable, observation terrain, point de vue tranche\n- Ancre les exemples dans les secteurs cibles (restaurateur, artisan, commercant, agent immobilier...)\n- Stats credibles uniquement, sinon prefere les observations terrain\n\nJSON valide :\n{\n  \"posts\": [\n    {\n      \"id\": 1,\n      \"categorie\": \"educatif\",\n      \"titre_interne\": \"Titre court\",\n      \"hook\": \"Hook avec emoji (max 200 car)\",\n      \"corps\": \"Corps COURT sans hook ni CTA (max 800 car)\",\n      \"cta\": \"Question ouverte qui pousse a commenter\",\n      \"hashtags\": [\"#imprimerie\", \"#RapidPub\", \"#marketing\"],\n      \"format_visuel\": \"photo_realiste\",\n      \"idee_visuel\": \"Description courte du visuel\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.8
+        }
+      },
+      "id": "2706324f-07d3-4eff-a6f3-d220ee67c6be",
+      "name": "Generation 3 Posts",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        2060,
+        480
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/gemini-3-pro-image-preview",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.prompt_image }}\",\n  \"aspect_ratio\": \"1:1\",\n  \"resolution\": \"2K\",\n  \"num_images\": 1,\n  \"output_format\": \"png\"\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3456,
+        480
+      ],
+      "id": "5f59ef0a-1eb9-4c93-bd08-5557a141214b",
+      "name": "Nano Banana Pro",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gzFGtaoxzrlyP0vK",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Recuperer les donnees du post depuis Merge Prompts\nconst postItems = $('Merge Prompts1').all();\nconst itemIndex = $itemIndex;\nconst post = postItems[itemIndex]?.json || postItems[0]?.json || {};\n\nconst categorieMap = {\n  'educatif': 'Educatif',\n  'actualite': 'Actualite',\n  'cas_concrets': 'Cas_Concrets',\n  'mythbusters': 'Mythbusters',\n  'chiffres_choc': 'Chiffres_Choc',\n  'predictions': 'Predictions'\n};\n\nreturn [{\n  json: {\n    titre_interne: post.titre_interne || '',\n    categorie: categorieMap[post.categorie?.toLowerCase()] || post.categorie || '',\n    hook: post.hook || '',\n    corps: post.corps || '',\n    cta: post.cta || '',\n    hashtags: Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags || ''),\n    format_visuel: post.format_visuel || '',\n    prompt_image: post.prompt_image || '',\n    image_url: input.secure_url || '',\n    score_ia: post.score_ia || 0,\n    score_hook: post.score_hook || 0,\n    score_commentaires: post.score_commentaires || 0,\n    score_originalite: post.score_originalite || 0,\n    score_valeur: post.score_valeur || 0,\n    score_structure: post.score_structure || 0,\n    points_forts: post.points_forts || '',\n    suggestions_ia: post.suggestions_ia || '',\n    statut: 'A_Valider',\n    created_at: new Date().toISOString(),\n    date_generation: new Date().toISOString()\n  },\n  pairedItem: { item: itemIndex }\n}];"
+      },
+      "id": "13dd3ad8-4e5b-4551-9c9e-f60ad99e61bb",
+      "name": "Prepare Supabase",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3808,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "44955bec-e44f-470c-98d9-251f58f90638",
+      "name": "Lundi 8h1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=printing+industry&hl=fr",
+        "options": {}
+      },
+      "id": "025d7531-be38-4f37-9dfb-3a0c6c5653d1",
+      "name": "RSS GraphiLine1",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        464
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://printmediacentr.com/feed/",
+        "options": {}
+      },
+      "id": "28501b1b-15ec-4363-8c97-e875533fa708",
+      "name": "RSS PrintWeek1",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        608
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.fespa.com/feed/",
+        "options": {}
+      },
+      "id": "f4f9fd49-8f41-4605-9287-bfd8d5c966ab",
+      "name": "RSS FESPA1",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        896
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === ACCUMULATEUR : attend les 7 flux RSS avant de traiter ===\nconst TOTAL_FEEDS = 7;\nconst STALE_TIMEOUT = 300000; // 5 min - reset si execution precedente a plante\n\nconst staticData = $getWorkflowStaticData('node');\nconst now = Date.now();\n\n// Reset si donnees perimees (execution precedente echouee)\nif (staticData.timestamp && (now - staticData.timestamp) > STALE_TIMEOUT) {\n  staticData.rawItems = [];\n  staticData.feedCount = 0;\n}\n\n// Initialiser\nif (!staticData.rawItems) {\n  staticData.rawItems = [];\n  staticData.feedCount = 0;\n}\n\n// Accumuler les items de ce flux RSS\nstaticData.timestamp = now;\nconst newItems = $input.all().map(i => i.json);\nstaticData.rawItems = staticData.rawItems.concat(newItems);\nstaticData.feedCount++;\n\n// Pas encore tous les flux ? Retourner vide (bloque la suite)\nif (staticData.feedCount < TOTAL_FEEDS) {\n  return [];\n}\n\n// === Tous les flux recus ! Traiter ===\nconst allItems = staticData.rawItems;\n\n// Reset pour la prochaine execution\nstaticData.rawItems = [];\nstaticData.feedCount = 0;\nstaticData.timestamp = null;\n\nfunction cleanText(text) {\n  if (!text) return '';\n  return text\n    .replace(/<[^>]*>/g, '')\n    .replace(/\\s+/g, ' ')\n    .trim()\n    .substring(0, 1000);\n}\n\nconst seen = new Set();\nconst cleaned = [];\n\nfor (const item of allItems) {\n  const key = (item.title || item.text || item.content || '').substring(0, 100);\n  if (key && !seen.has(key)) {\n    seen.add(key);\n    cleaned.push({\n      source: item.source || item.companyName || 'RSS',\n      title: cleanText(item.title || ''),\n      content: cleanText(item.content || item.text || item.description || ''),\n      engagement: item.likes || item.reactions || item.numLikes || 0,\n      comments: item.comments || item.numComments || 0,\n      date: item.pubDate || item.postedAt || item.date || new Date().toISOString(),\n      url: item.link || item.url || item.postUrl || ''\n    });\n  }\n}\n\nconst sorted = cleaned\n  .sort((a, b) => (b.engagement + b.comments) - (a.engagement + a.comments))\n  .slice(0, 40);\n\nreturn [{ json: { veille_data: sorted, count: sorted.length } }];"
+      },
+      "id": "361651f3-d4c2-4f24-9f9d-c5be10401b84",
+      "name": "Clean and Dedupe1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en analyse de contenu LinkedIn pour le secteur de l'imprimerie B2B.\n\nContexte : Rapid Pub cible des professionnels dans ces secteurs : Restauration/Hotellerie, Commerce/Retail, Immobilier, BTP/Artisanat, Sante/Bien-etre, Evenementiel.\nLes decideurs sont des dirigeants/gerants et des responsables marketing/com.\nTon attendu : Professionnel, expert, pedagogue.\n\nAnalyse les posts et actualites fournis et identifie :\n1. Les hooks qui generent le plus d'engagement aupres de pros/dirigeants\n2. Les formats de posts qui fonctionnent (liste, storytelling, question, stat choc...)\n3. Les sujets tendance dans le secteur print ET dans les secteurs cibles (restauration, commerce, immobilier, BTP, evenementiel)\n4. Les bonnes pratiques de formatting\n5. Les erreurs a eviter\n6. Les mythes/idees recues a deconstruire (notamment sur le print)\n7. Les chiffres/stats marquants sur le print et la com locale\n8. Les predictions/tendances futures\n9. Les cas concrets/use cases de print reussi dans les secteurs cibles\n\nReponds en JSON structure.",
+              "role": "system"
+            },
+            {
+              "content": "=Voici les donnees de veille collectees ({{ $json.count }} elements) :\n\n{{ JSON.stringify($json.veille_data, null, 2) }}\n\nAnalyse ces contenus et fournis tes insights en JSON avec cette structure :\n{\n  \"hooks_performants\": [\"exemple 1\", \"exemple 2\"],\n  \"formats_engageants\": [\"format 1 avec explication\"],\n  \"sujets_tendance\": [\"sujet 1\", \"sujet 2\"],\n  \"bonnes_pratiques\": [\"pratique 1\"],\n  \"erreurs_a_eviter\": [\"erreur 1\"],\n  \"mythes_a_casser\": [\"mythe 1 avec realite\"],\n  \"chiffres_marquants\": [\"stat 1 avec source si dispo\"],\n  \"predictions_tendances\": [\"prediction 1\"],\n  \"cas_concrets_sectoriels\": [\"use case 1 dans un secteur cible\"],\n  \"insights_cles\": \"Resume des insights principaux\"\n}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.7
+        }
+      },
+      "id": "0c744b01-3e2d-4f71-bd92-cb70ff8d709a",
+      "name": "Analyse Tendances1",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        480
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let content = $input.first().json.message?.content || (Array.isArray($input.first().json.content) ? $input.first().json.content[0].text : $input.first().json.content);\n\nif (typeof content === 'string') {\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '');\n  content = JSON.parse(content);\n}\n\nconst posts = content.posts || content;\n\nconst enrichedPosts = posts.map((post, index) => ({\n  ...post,\n  date_generation: new Date().toISOString(),\n  statut: 'A_Valider',\n  score_ia: 0,\n  suggestions_ia: ''\n}));\n\nreturn enrichedPosts.map(post => ({ json: post }));"
+      },
+      "id": "e01cea68-544d-48ef-926c-4e41ec374118",
+      "name": "Parse Posts1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un evaluateur STRICT et HONNETE de posts LinkedIn B2B.\n\nCONTEXTE : Posts pour Rapid Pub, imprimerie en ligne B2B ciblant des dirigeants et responsables marketing dans les secteurs Restauration, Commerce, Immobilier, BTP, Evenementiel.\n\nEvalue chaque post sur 5 criteres (echelle 1-10) :\n\n1. HOOK & \"VOIR PLUS\" (est-ce que les 3 premieres lignes donnent envie de cliquer ?)\n   - 5 = Hook banal, on scroll sans s'arreter\n   - 7 = Hook accrocheur, on hesite a cliquer\n   - 9 = Hook irresistible, impossible de ne pas cliquer\n\n2. POTENTIEL DE COMMENTAIRES (est-ce que le CTA et le contenu poussent a reagir ?)\n   - 5 = CTA generique, peu de raison de commenter\n   - 7 = CTA qui invite a partager son avis\n   - 9 = On a ENVIE de donner son point de vue, debat naturel\n\n3. ORIGINALITE (est-ce que cet angle a deja ete vu 100 fois ?)\n   - 5 = Sujet et angle recycles, deja-vu\n   - 7 = Angle frais sur un sujet connu\n   - 9 = Perspective vraiment unique et surprenante\n\n4. VALEUR POUR LA CIBLE (est-ce que le dirigeant/responsable marketing apprend quelque chose ?)\n   - 5 = Contenu superficiel, rien de nouveau\n   - 7 = Informations utiles et actionnables\n   - 9 = Insights rares que le lecteur va sauvegarder\n\n5. STRUCTURE & LISIBILITE (respect des bonnes pratiques LinkedIn)\n   - 5 = Pave de texte, mal structure\n   - 7 = Bonne structure, aere, facile a lire\n   - 9 = Structure parfaite pour mobile, rythme excellent\n\nECHELLE DE SCORING (SOIS HONNETE) :\n- 4-5 : Mediocre, ne devrait pas etre publie en l'etat\n- 6 : Correct mais sans plus, ameliorations necessaires\n- 6.5-7 : Bon post, publiable\n- 7-7.5 : Tres bon post, engage bien\n- 8+ : Exceptionnel, viralite possible\n\nLa MOYENNE attendue est autour de 7. Un 8+ doit etre RARE et merite. Un 5 signale un vrai probleme.\n\nReponds en JSON STRICT.",
+              "role": "system"
+            },
+            {
+              "content": "=Evalue ce post LinkedIn de facon HONNETE et STRICTE :\n\nCategorie: {{ $json.categorie }}\nHook: {{ $json.hook }}\nCorps: {{ $json.corps }}\nCTA: {{ $json.cta }}\nHashtags: {{ $json.hashtags }}\n\nReponds en JSON :\n{\n  \"score_hook\": ,\n  \"score_commentaires\": ,\n  \"score_originalite\": ,\n  \"score_valeur\": ,\n  \"score_structure\": ,\n  \"score_final\": ,\n  \"points_forts\": \"Ce qui fonctionne bien dans ce post\",\n  \"suggestions\": \"Ameliorations concretes si score < 7.5, sinon chaine vide\"\n}\n\nLe score_final est la moyenne des 5 criteres. Sois STRICT : la moyenne de tes scores doit tourner autour de 7."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.3
+        }
+      },
+      "id": "bdaecea9-39b7-4a55-b708-4bb1f3a96e33",
+      "name": "Scoring Post1",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        2544,
+        480
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst parsedPosts = $('Parse Posts1').all();\n\nreturn items.map((item, index) => {\n  const post = parsedPosts[index]?.json || {};\n  let scoreData = item.json.message?.content || (Array.isArray(item.json.content) ? item.json.content[0].text : item.json.content) || item.json;\n\n  if (typeof scoreData === 'string') {\n    scoreData = JSON.parse(scoreData);\n  }\n\n  return {\n    json: {\n      ...post,\n      score_ia: scoreData.score_final || 7,\n      score_hook: scoreData.score_hook || 0,\n      score_commentaires: scoreData.score_commentaires || 0,\n      score_originalite: scoreData.score_originalite || 0,\n      score_valeur: scoreData.score_valeur || 0,\n      score_structure: scoreData.score_structure || 0,\n      points_forts: scoreData.points_forts || '',\n      suggestions_ia: scoreData.suggestions || ''\n    }\n  };\n});"
+      },
+      "id": "d4c294ae-c200-4bf5-bfce-2e54f6df2174",
+      "name": "Merge Score1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2816,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert en generation de prompts pour Nano Banana Pro (Gemini 3 Pro Image), specialise dans la creation d'images professionnelles.\n\nTA MISSION : Generer un prompt d'image optimise pour chaque post LinkedIn de Rapid Pub.\n\n=== FORCES DE NANO BANANA PRO ===\n- Excellent rendu du TEXTE dans les images (exploite-le !)\n- Comprend les instructions complexes et detaillees\n- Excellent pour les infographies, diagrammes, visuels de donnees\n- Maintient la coherence visuelle\n- Peut creer des illustrations 3D stylisees de haute qualite\n\n=== CHARTE GRAPHIQUE RAPID PUB (OBLIGATOIRE) ===\n\nCouleurs :\n- Orange principal : #E94E1B (vibrant, energique)\n- Vert accent : #A4C639 (lime, dynamique)\n- Fond : Blanc ou gris tres clair pour contraste\n- Texte dans image : Noir ou gris fonce\n\nStyle visuel :\n- Flat design moderne avec touches 3D subtiles\n- Petits carres/pixels disperses (signature Rapid Pub = vitesse, digital)\n- Ambiance : Dynamique, professionnelle, accessible\n- PAS de photos stock - uniquement illustrations/3D stylisees\n\nElements recurrents :\n- Icones d'imprimerie (imprimante, papier, encre, CMJN)\n- Elements de livraison rapide (chrono, fleches, vitesse)\n- Produits imprimes (flyers, cartes de visite, packaging)\n\n=== REGLES PAR CATEGORIE ===\n\n1. EDUCATIF → Infographie avec texte lisible, liste visuelle, icones\n2. ACTUALITE → Data viz moderne, graphiques, infographie news\n3. CAS_CONCRETS → Illustration scenario pro, mise en situation metier, storytelling visuel\n4. MYTHBUSTERS → Visuel \"vrai/faux\", before/after, mythe barre\n5. CHIFFRES_CHOC → Big number en grand, data viz impactante\n6. PREDICTIONS → Style futuriste, timeline, tech/innovation\n\n=== FORMAT DE SORTIE (JSON) ===\n\n{\n  \"prompt_image\": \"Le prompt COMPLET pour Nano Banana Pro\",\n  \"format_visuel\": \"infographie | illustration | data_viz | 3d_render\",\n  \"include_text\": true,\n  \"text_to_include\": \"Texte court EN FRANCAIS a inclure dans l'image\"\n}\n\n=== STRUCTURE DU PROMPT ===\n\n1. Style visuel (flat design, 3D illustration, infographic...)\n2. Sujet principal detaille\n3. Couleurs specifiques (#E94E1B orange, #A4C639 green)\n4. Composition (centered, dynamic angle, clean background...)\n5. Elements additionnels (pixels, speed lines, icons...)\n6. Ambiance (professional, energetic, modern B2B...)\n7. **CRITICAL: ALL visible text in the image MUST be in FRENCH** - Example: \"Text in image: '5 erreurs à éviter'\" NOT \"5 mistakes to avoid\"\n8. \"Clean white or light gray background, professional B2B aesthetic\"\n\n=== REGLE ABSOLUE ===\nTout texte visible dans l'image DOIT etre en FRANCAIS.\nLe prompt peut etre en anglais SAUF le texte qui apparait dans l'image.\nExemple correct : \"...with bold French text saying '5 erreurs fatales'...\"\nExemple INCORRECT : \"...with bold text saying '5 fatal mistakes'...\"",
+              "role": "system"
+            },
+            {
+              "content": "=Genere un prompt d'image optimise pour Nano Banana Pro.\n\nPOST LINKEDIN :\n- Categorie : {{ $json.categorie }}\n- Titre : {{ $json.titre_interne }}\n- Hook : {{ $json.hook }}\n- Theme principal : {{ $json.corps }}\n- Idee visuel suggeree : {{ $json.idee_visuel }}\n\nLe visuel doit etre impactant pour LinkedIn, format carre (1:1), et respecter la charte Rapid Pub.\n\nReponds uniquement en JSON valide."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.8
+        }
+      },
+      "id": "5e058fb7-f5ed-475c-a4b3-c9edc839c6bd",
+      "name": "Genere Prompts Images1",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        2992,
+        480
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst mergedScores = $('Merge Score1').all();\n\nreturn items.map((item, index) => {\n  const post = mergedScores[index]?.json || {};\n  let promptData = item.json.message?.content || (Array.isArray(item.json.content) ? item.json.content[0].text : item.json.content) || item.json;\n\n  if (typeof promptData === 'string') {\n    promptData = JSON.parse(promptData);\n  }\n\n  return {\n    json: {\n      ...post,\n      format_visuel: promptData.format_visuel || 'illustration',\n      prompt_image: promptData.prompt_image || '',\n      include_text: promptData.include_text || false,\n      text_to_include: promptData.text_to_include || ''\n    }\n  };\n});"
+      },
+      "id": "6156d030-d1b3-4571-9aee-811bee98ee5c",
+      "name": "Merge Prompts1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3280,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dcxj1nknb/image/upload",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"file\": \"{{ $json.images[0].url }}\",\n  \"upload_preset\": \"rapid-pub-linkedin\"\n}",
+        "options": {}
+      },
+      "id": "6c2b17b1-c309-437b-95c5-e5f05ebf616e",
+      "name": "Upload Cloudinary1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3632,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=imprimerie&hl=fr",
+        "options": {}
+      },
+      "id": "29562c46-a176-41c2-a4e6-06bca84c4340",
+      "name": "RSS Feed Read1",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        752
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=restauration+hotellerie+communication+print&hl=fr",
+        "options": {}
+      },
+      "id": "a1b2c3d4-1111-4aaa-bbbb-111111111111",
+      "name": "RSS Restauration",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        1040
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=immobilier+BTP+artisanat+communication+print&hl=fr",
+        "options": {}
+      },
+      "id": "a1b2c3d4-2222-4aaa-bbbb-222222222222",
+      "name": "RSS Immobilier BTP",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        1184
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=evenementiel+salon+foire+communication+imprimerie&hl=fr",
+        "options": {}
+      },
+      "id": "a1b2c3d4-3333-4aaa-bbbb-333333333333",
+      "name": "RSS Evenementiel",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        1328
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "posts",
+        "returnAll": false,
+        "limit": 20,
+        "filterType": "string",
+        "filterString": "order=created_at.desc"
+      },
+      "id": "b5e1a2c3-4d5e-4f6a-8b9c-0d1e2f3a4b5c",
+      "name": "Get Recent Posts",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        832,
+        160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $input.all();\n\n// Si aucun post ou erreur Supabase, retourner un message par defaut\nif (!posts || posts.length === 0 || !posts[0].json.id) {\n  return [{ json: {\n    anti_repetition: 'Aucun post recent en base. Libre choix des sujets et categories.',\n    categories_recentes: []\n  } }];\n}\n\nconst summary = posts.map(p => {\n  const j = p.json;\n  return `- [${j.categorie || 'N/A'}] ${j.titre_interne || 'Sans titre'} | Hook: ${(j.hook || '').substring(0, 80)}`;\n}).join('\\n');\n\nconst categories = posts\n  .map(p => p.json.categorie?.toLowerCase())\n  .filter(Boolean);\n\nconst categoryCounts = {};\ncategories.forEach(c => { categoryCounts[c] = (categoryCounts[c] || 0) + 1; });\n\nconst categoryInfo = Object.entries(categoryCounts)\n  .map(([cat, count]) => `${cat}: ${count} fois`)\n  .join(', ');\n\nreturn [{ json: {\n  anti_repetition: `Voici les ${posts.length} derniers posts generes. NE REPETE PAS ces sujets, angles ou hooks.\\n\\nCategories utilisees recemment : ${categoryInfo}\\n\\nPosts recents :\\n${summary}`,\n  categories_recentes: categories\n} }];"
+      },
+      "id": "c6d7e8f9-0a1b-4c2d-8e3f-4a5b6c7d8e9f",
+      "name": "Format Anti Repetition",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "d8e9f0a1-b2c3-4d4e-9f5a-6b7c8d9e0f1a",
+      "name": "Merge Before Generation",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1760,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "posts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "titre_interne",
+              "fieldValue": "={{ $json.titre_interne }}"
+            },
+            {
+              "fieldId": "categorie",
+              "fieldValue": "={{ $json.categorie }}"
+            },
+            {
+              "fieldId": "hook",
+              "fieldValue": "={{ $json.hook }}"
+            },
+            {
+              "fieldId": "corps",
+              "fieldValue": "={{ $json.corps }}"
+            },
+            {
+              "fieldId": "cta",
+              "fieldValue": "={{ $json.cta }}"
+            },
+            {
+              "fieldId": "hashtags",
+              "fieldValue": "={{ $json.hashtags }}"
+            },
+            {
+              "fieldId": "image_url",
+              "fieldValue": "={{ $json.image_url }}"
+            },
+            {
+              "fieldId": "score_ia",
+              "fieldValue": "={{ $json.score_ia }}"
+            },
+            {
+              "fieldId": "score_hook",
+              "fieldValue": "={{ $json.score_hook }}"
+            },
+            {
+              "fieldId": "score_commentaires",
+              "fieldValue": "={{ $json.score_commentaires }}"
+            },
+            {
+              "fieldId": "score_originalite",
+              "fieldValue": "={{ $json.score_originalite }}"
+            },
+            {
+              "fieldId": "score_valeur",
+              "fieldValue": "={{ $json.score_valeur }}"
+            },
+            {
+              "fieldId": "score_structure",
+              "fieldValue": "={{ $json.score_structure }}"
+            },
+            {
+              "fieldId": "points_forts",
+              "fieldValue": "={{ $json.points_forts }}"
+            },
+            {
+              "fieldId": "suggestions_ia",
+              "fieldValue": "={{ $json.suggestions_ia }}"
+            },
+            {
+              "fieldId": "statut",
+              "fieldValue": "a_valider"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $json.created_at }}"
+            },
+            {
+              "fieldId": "date_generation",
+              "fieldValue": "={{ $json.date_generation }}"
+            },
+            {
+              "fieldId": "prompt_image",
+              "fieldValue": "={{ $json.prompt_image }}"
+            },
+            {
+              "fieldId": "format_visuel",
+              "fieldValue": "={{ $json.format_visuel }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3984,
+        480
+      ],
+      "id": "f095ad63-4a55-4002-9a5a-d26b3cdae9a9",
+      "name": "Create a row2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "logs_workflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "date_execution",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "statut",
+              "fieldValue": "Succes"
+            },
+            {
+              "fieldId": "posts_generes",
+              "fieldValue": "={{ $items().length }}"
+            },
+            {
+              "fieldId": "images_generees",
+              "fieldValue": "={{ $items().length }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4160,
+        480
+      ],
+      "id": "a09f448f-9cda-4893-aee9-06f50e05a1e9",
+      "name": "Create a row3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OQcT7OAkxeUfrKZN",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Generation 3 Posts": {
+      "main": [
+        [
+          {
+            "node": "Parse Posts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nano Banana Pro": {
+      "main": [
+        [
+          {
+            "node": "Upload Cloudinary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Supabase": {
+      "main": [
+        [
+          {
+            "node": "Create a row2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lundi 8h1": {
+      "main": [
+        [
+          {
+            "node": "RSS GraphiLine1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS PrintWeek1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Feed Read1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS FESPA1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Restauration",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Immobilier BTP",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Evenementiel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Recent Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS GraphiLine1": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS PrintWeek1": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS FESPA1": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean and Dedupe1": {
+      "main": [
+        [
+          {
+            "node": "Analyse Tendances1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse Tendances1": {
+      "main": [
+        [
+          {
+            "node": "Merge Before Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Posts": {
+      "main": [
+        [
+          {
+            "node": "Format Anti Repetition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Anti Repetition": {
+      "main": [
+        [
+          {
+            "node": "Merge Before Generation",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Before Generation": {
+      "main": [
+        [
+          {
+            "node": "Generation 3 Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Posts1": {
+      "main": [
+        [
+          {
+            "node": "Scoring Post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scoring Post1": {
+      "main": [
+        [
+          {
+            "node": "Merge Score1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Score1": {
+      "main": [
+        [
+          {
+            "node": "Genere Prompts Images1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Genere Prompts Images1": {
+      "main": [
+        [
+          {
+            "node": "Merge Prompts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Prompts1": {
+      "main": [
+        [
+          {
+            "node": "Nano Banana Pro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Cloudinary1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Feed Read1": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Restauration": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Immobilier BTP": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Evenementiel": {
+      "main": [
+        [
+          {
+            "node": "Clean and Dedupe1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row2": {
+      "main": [
+        [
+          {
+            "node": "Create a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4395a077-9307-4177-9ba1-ce371730046d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c68d0e75da974712b0aa88aaeec1176d721c357e16ef5838f19fd54163f6cbd7"
+  },
+  "id": "tVTKwO1ZvB8CnQ0l",
+  "tags": [
+    {
+      "updatedAt": "2026-02-02T16:12:00.859Z",
+      "createdAt": "2026-02-02T16:12:00.859Z",
+      "id": "Fj19eWa2ctdMfBWd",
+      "name": "RAPIDPUB"
+    }
+  ]
+}

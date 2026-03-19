@@ -1,0 +1,286 @@
+{
+  "name": "Workflow 1 - Modification Texte LinkedIn",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "modify-text",
+        "responseMode": "lastNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "modify-text"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "getAll",
+        "tableId": "posts",
+        "returnAll": false,
+        "limit": 1,
+        "additionalFields": {}
+      },
+      "name": "Get Post from Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\n\nreturn {\n  json: {\n    post_id: post.id,\n    current_hook: post.hook,\n    current_corps: post.corps,\n    current_cta: post.cta,\n    current_hashtags: post.hashtags,\n    version_precedente: JSON.stringify({\n      hook: post.hook,\n      corps: post.corps,\n      cta: post.cta,\n      hashtags: post.hashtags,\n      saved_at: new Date().toISOString()\n    }),\n    user_prompt: $('Webhook').first().json.prompt\n  }\n};"
+      },
+      "name": "Save Previous Version",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "updateKey": "id",
+        "columnValuePairs": {}
+      },
+      "name": "Set Status Modification_En_Cours",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        910,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-5-20250929"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Tu es un expert LinkedIn specialise dans la redaction de posts professionnels B2B pour Rapid Pub, une imprimerie en ligne francaise avec livraison en 24h.\n\n=== IDENTITE DE MARQUE ===\n- Nom : Rapid Pub\n- Secteur : Imprimerie en ligne B2B\n- USP : Livraison en 24h, qualite pro, prix competitifs, accompagnement personnalise\n- Cible : B2B — Associations/collectivites, Agences de com/marketing, Artisans/TPE, Commerces locaux, PME\n- Ton : Professionnel et expert. Pedagogue et accessible, sans etre familier.\n- Voix : \"on\", \"chez Rapid Pub, on...\", \"notre equipe\" — jamais de langage corporate froid\n\n=== TA MISSION ===\nTu recois un post LinkedIn existant (hook, corps, cta, hashtags) et une demande de modification de l'utilisateur.\nTu dois appliquer les modifications demandees tout en preservant :\n- La coherence globale du post\n- Le ton et la voix de la marque Rapid Pub\n- Les optimisations algorithme LinkedIn (hook percutant, paragraphes courts, CTA engageant)\n- La longueur cible (1000-1800 caracteres)\n\n=== REGLES DE MODIFICATION ===\n1. Applique UNIQUEMENT les modifications demandees par l'utilisateur\n2. Ne change PAS les parties du post qui ne sont pas concernees par la demande\n3. Si la demande est vague, interprete-la au mieux en gardant l'esprit du post\n4. Garde toujours le format LinkedIn : paragraphes courts, emojis strategiques, sauts de ligne\n5. Le hook doit rester ULTRA percutant (emoji + phrase choc, max 100 caracteres)\n6. Le CTA doit pousser au COMMENTAIRE (question ouverte)\n7. Les hashtags : 3-5 dont #RapidPub\n8. AUCUN lien externe dans le corps du post\n\n=== FORMAT DE SORTIE OBLIGATOIRE (JSON valide) ===\n{\n  \"hook\": \"Premiere ligne modifiee avec emoji\",\n  \"corps\": \"Corps du post modifie avec sauts de ligne\\n\\nParagraphes courts...\",\n  \"cta\": \"Call-to-action modifie\",\n  \"hashtags\": \"#hashtag1 #hashtag2 #RapidPub\",\n  \"modifications_effectuees\": \"Description courte des modifications appliquees\"\n}\n\nReponds UNIQUEMENT en JSON valide, sans texte autour.",
+              "role": "system"
+            },
+            {
+              "content": "=== POST ACTUEL ===\n\nHOOK :\n{{ $json.current_hook }}\n\nCORPS :\n{{ $json.current_corps }}\n\nCTA :\n{{ $json.current_cta }}\n\nHASHTAGS :\n{{ $json.current_hashtags }}\n\n---\n\nDEMANDE DE MODIFICATION DE L'UTILISATEUR :\n{{ $json.user_prompt }}\n\n---\n\nApplique les modifications demandees et retourne le post modifie en JSON valide."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.7
+        }
+      },
+      "name": "Claude Modify Text",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1130,
+        300
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "WM7Cm5qmxlN4ywNk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst previousData = $('Save Previous Version').first().json;\n\n// Handle both Anthropic and OpenAI response formats\nlet content = response.message?.content || (Array.isArray(response.content) ? response.content[0].text : response.content) || response.text;\n\n// Nettoyer le JSON si wrapped dans markdown\nif (typeof content === 'string') {\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  content = JSON.parse(content);\n}\n\nreturn {\n  json: {\n    post_id: previousData.post_id,\n    hook: content.hook,\n    corps: content.corps,\n    cta: content.cta,\n    hashtags: content.hashtags,\n    modifications_effectuees: content.modifications_effectuees,\n    version_precedente: previousData.version_precedente\n  }\n};"
+      },
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "updateKey": "id",
+        "columnValuePairs": {}
+      },
+      "name": "Update Post in Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1570,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: true,\n    post_id: $json.post_id,\n    modifications: $json.modifications_effectuees\n  }\n};"
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1790,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        690,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "updateKey": "id",
+        "columnValuePairs": {}
+      },
+      "name": "Rollback Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        910,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: false,\n    error: \"La modification a échoué. Veuillez réessayer.\"\n  }\n};"
+      },
+      "name": "Error Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        520
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Post from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post from Supabase": {
+      "main": [
+        [
+          {
+            "node": "Save Previous Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Previous Version": {
+      "main": [
+        [
+          {
+            "node": "Set Status Modification_En_Cours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Status Modification_En_Cours": {
+      "main": [
+        [
+          {
+            "node": "Claude Modify Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Modify Text": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Update Post in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Post in Supabase": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Rollback Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rollback Status": {
+      "main": [
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": []
+}

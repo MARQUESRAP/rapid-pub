@@ -1,0 +1,894 @@
+{
+  "name": "Workflow 3 - Publication LinkedIn (v2 avec Promo)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10,
+              "triggerAtDay": 2
+            },
+            {
+              "triggerAtHour": 14,
+              "triggerAtDay": 4
+            }
+          ]
+        },
+        "options": {
+          "timezone": "Europe/Paris"
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300],
+      "notes": "Mardi 10h et Jeudi 14h"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "getAll",
+        "tableId": "posts",
+        "returnAll": false,
+        "limit": 10,
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "statut",
+              "condition": "equals",
+              "keyValue": "Planifie"
+            }
+          ]
+        },
+        "additionalFields": {
+          "order": "date_publication_prevue.asc"
+        }
+      },
+      "id": "get-posts-valeur",
+      "name": "Get Posts Valeur",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [470, 200],
+      "notes": "Posts valeur (contenus IA)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "getAll",
+        "tableId": "posts_promo",
+        "returnAll": false,
+        "limit": 10,
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "statut",
+              "condition": "equals",
+              "keyValue": "Planifie"
+            }
+          ]
+        },
+        "additionalFields": {
+          "order": "date_publication_prevue.asc"
+        }
+      },
+      "id": "get-posts-promo",
+      "name": "Get Posts Promo",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [470, 400],
+      "notes": "Posts promo (produits)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperer les posts des deux sources\nconst postsValeur = $('Get Posts Valeur').all().map(item => ({\n  ...item.json,\n  post_type: 'valeur',\n  table_name: 'posts'\n}));\n\nconst postsPromo = $('Get Posts Promo').all().map(item => ({\n  ...item.json,\n  post_type: 'promo',\n  table_name: 'posts_promo'\n}));\n\n// Combiner et trier par date de publication prevue\nconst allPosts = [...postsValeur, ...postsPromo]\n  .filter(post => post.id) // Filtrer les resultats vides\n  .sort((a, b) => {\n    const dateA = new Date(a.date_publication_prevue || '9999-12-31');\n    const dateB = new Date(b.date_publication_prevue || '9999-12-31');\n    return dateA - dateB;\n  });\n\nif (allPosts.length === 0) {\n  return [{ json: { no_posts: true } }];\n}\n\nreturn allPosts.map(post => ({ json: post }));"
+      },
+      "id": "merge-posts",
+      "name": "Merge All Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300],
+      "notes": "Combine posts valeur et promo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.no_posts }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-no-posts",
+      "name": "IF No Posts",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [910, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    message: 'Aucun post a publier pour ce creneau.',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "log-nothing",
+      "name": "Log Nothing to Publish",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1130, 450]
+    },
+    {
+      "parameters": {
+        "batchSize": 1
+      },
+      "id": "loop-posts",
+      "name": "Loop Each Post",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1130, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\n\n// Construire le contenu du post LinkedIn\nconst parts = [];\nif (post.hook) parts.push(post.hook);\nif (post.corps) parts.push(post.corps);\nif (post.cta) parts.push(post.cta);\nif (post.hashtags) {\n  // S'assurer que les hashtags sont une string\n  const hashtagsStr = Array.isArray(post.hashtags) \n    ? post.hashtags.join(' ') \n    : post.hashtags;\n  parts.push(hashtagsStr);\n}\n\nconst content = parts.join('\\n\\n');\n\n// Determiner l'image a utiliser\n// Pour les promos: image_transformee_url\n// Pour les valeur: image_url\nlet imageUrl = post.image_url;\nif (post.post_type === 'promo' && post.image_transformee_url) {\n  imageUrl = post.image_transformee_url;\n}\n\nreturn {\n  json: {\n    post_id: post.id,\n    post_type: post.post_type,\n    table_name: post.table_name,\n    content: content,\n    image_url: imageUrl,\n    titre: post.titre_interne || post.nom_produit || 'Post LinkedIn',\n    // PLACEHOLDER: Remplacer par votre Organization URN LinkedIn\n    organization_urn: 'urn:li:organization:XXXXXXXX'\n  }\n};"
+      },
+      "id": "prepare-post",
+      "name": "Prepare Post Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1350, 200],
+      "notes": "Adapte pour valeur ET promo"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.image_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "download-image",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1570, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ registerUploadRequest: { recipes: ['urn:li:digitalmediaRecipe:feedshare-image'], owner: $('Prepare Post Data').first().json.organization_urn, serviceRelationships: [{ relationshipType: 'OWNER', identifier: 'urn:li:userGeneratedContent' }] } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "register-upload",
+      "name": "Register Image Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1790, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "linkedin-oauth2-header",
+          "name": "LinkedIn OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "upload-binary",
+      "name": "Upload Image Binary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2010, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "linkedin-oauth2-header",
+          "name": "LinkedIn OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ author: $('Prepare Post Data').first().json.organization_urn, lifecycleState: 'PUBLISHED', visibility: 'PUBLIC', distribution: { feedDistribution: 'MAIN_FEED', targetEntities: [], thirdPartyDistributionChannels: [] }, content: { media: { id: $('Register Image Upload').first().json.value.asset } }, commentary: $('Prepare Post Data').first().json.content }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "create-post",
+      "name": "Create LinkedIn Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2230, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "linkedin-oauth2-header",
+          "name": "LinkedIn OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Prepare Post Data').first().json.post_type }}",
+              "value2": "promo"
+            }
+          ]
+        }
+      },
+      "id": "if-promo",
+      "name": "IF Promo Post",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2450, 200],
+      "notes": "Route vers la bonne table pour update"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts_promo",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $('Prepare Post Data').first().json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "Publie",
+            "date_publication_effective": "={{ $now.toISO() }}",
+            "linkedin_post_id": "={{ $('Create LinkedIn Post').first().json.id }}",
+            "lien_post_linkedin": "={{ 'https://www.linkedin.com/feed/update/' + $('Create LinkedIn Post').first().json.id }}",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "id": "update-promo",
+      "name": "Update Post Promo Publie",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2670, 100],
+      "notes": "MAJ table posts_promo"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $('Prepare Post Data').first().json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "Publie",
+            "date_publication_reelle": "={{ $now.toISO() }}",
+            "lien_post_linkedin": "={{ 'https://www.linkedin.com/feed/update/' + $('Create LinkedIn Post').first().json.id }}",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "id": "update-valeur",
+      "name": "Update Post Valeur Publie",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2670, 300],
+      "notes": "MAJ table posts"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "produits_promo",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $node['Merge All Posts'].json.produit_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "Poste",
+            "posted_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "id": "update-produit-poste",
+      "name": "Update Produit Poste",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2890, 100],
+      "notes": "MAJ statut produit source"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merger les resultats des deux branches\nconst postData = $('Prepare Post Data').first().json;\nconst linkedInPostId = $('Create LinkedIn Post').first().json.id;\n\nreturn {\n  json: {\n    post_id: postData.post_id,\n    post_type: postData.post_type,\n    titre: postData.titre,\n    linkedin_post_id: linkedInPostId,\n    lien_post: 'https://www.linkedin.com/feed/update/' + linkedInPostId,\n    published_at: new Date().toISOString()\n  }\n};"
+      },
+      "id": "merge-results",
+      "name": "Merge Update Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3110, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "client@rapidpub.fr",
+        "subject": "={{ $json.post_type === 'promo' ? '\\uD83C\\uDF1F' : '\\u2705' }} Post LinkedIn publie : {{ $json.titre }}",
+        "emailType": "html",
+        "message": "=<h2>{{ $json.post_type === 'promo' ? '\\uD83C\\uDF1F Post Promo' : '\\uD83C\\uDF89 Post Valeur' }} publie avec succes !</h2>\n\n<p><strong>Type :</strong> {{ $json.post_type === 'promo' ? 'Promotion Produit' : 'Contenu Valeur' }}</p>\n<p><strong>Titre :</strong> {{ $json.titre }}</p>\n<p><strong>Date :</strong> {{ $now.format('DD/MM/YYYY HH:mm') }}</p>\n\n<p>\n  <a href=\"{{ $json.lien_post }}\" \n     style=\"background: #E94E1B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;\">\n    Voir le post sur LinkedIn\n  </a>\n</p>\n\n<hr>\n<p style=\"color: #666; font-size: 12px;\">\n  Rapid Pub - Gestionnaire de posts LinkedIn\n</p>",
+        "options": {}
+      },
+      "id": "send-success-email",
+      "name": "Send Success Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [3330, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "create",
+        "tableId": "workflow_logs",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "Publication LinkedIn",
+            "date_execution": "={{ $now.toISO() }}",
+            "statut": "Succes",
+            "posts_generes": 1,
+            "details": "={{ JSON.stringify({ post_type: $json.post_type, titre: $json.titre, linkedin_id: $json.linkedin_post_id }) }}"
+          }
+        }
+      },
+      "id": "log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3550, 200]
+    },
+    {
+      "parameters": {},
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [1350, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.first().json;\n\nlet postId = 'unknown';\nlet postType = 'unknown';\nlet titre = 'Inconnu';\nlet tableName = 'posts';\n\ntry {\n  const postData = $('Prepare Post Data').first().json;\n  postId = postData?.post_id || 'unknown';\n  postType = postData?.post_type || 'unknown';\n  titre = postData?.titre || 'Inconnu';\n  tableName = postData?.table_name || 'posts';\n} catch (e) {\n  // Prepare Post Data may not have run yet\n}\n\nreturn {\n  json: {\n    post_id: postId,\n    post_type: postType,\n    table_name: tableName,\n    titre: titre,\n    error_message: error.message || 'Erreur lors de la publication LinkedIn',\n    error_details: JSON.stringify(error, null, 2),\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "error-handler",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1570, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.table_name }}",
+              "value2": "posts_promo"
+            }
+          ]
+        }
+      },
+      "id": "if-error-promo",
+      "name": "IF Error Promo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1790, 500]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts_promo",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $('Error Handler').first().json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "Erreur_Publication",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "id": "update-error-promo",
+      "name": "Update Promo Error",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2010, 420]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "update",
+        "tableId": "posts",
+        "filterType": "manual",
+        "matchType": "matchAll",
+        "conditions": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "equals",
+              "keyValue": "={{ $('Error Handler').first().json.post_id }}"
+            }
+          ]
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "statut": "Erreur_Publication",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        }
+      },
+      "id": "update-error-valeur",
+      "name": "Update Valeur Error",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2010, 580]
+    },
+    {
+      "parameters": {
+        "sendTo": "client@rapidpub.fr",
+        "subject": "=\\u26A0\\uFE0F Erreur publication LinkedIn : {{ $('Error Handler').first().json.titre }}",
+        "emailType": "html",
+        "message": "=<h2>\\u26A0\\uFE0F Erreur lors de la publication</h2>\n\n<p><strong>Type :</strong> {{ $('Error Handler').first().json.post_type === 'promo' ? 'Promotion Produit' : 'Contenu Valeur' }}</p>\n<p><strong>Post :</strong> {{ $('Error Handler').first().json.titre }}</p>\n<p><strong>Erreur :</strong> {{ $('Error Handler').first().json.error_message }}</p>\n<p><strong>Date :</strong> {{ $now.format('DD/MM/YYYY HH:mm') }}</p>\n\n<p>Le statut du post a ete mis a jour en <strong>Erreur_Publication</strong>. Vous pouvez relancer la publication manuellement depuis n8n.</p>\n\n<hr>\n<p style=\"color: #666; font-size: 12px;\">\n  Si l'erreur persiste, verifiez les credentials LinkedIn dans n8n.\n</p>",
+        "options": {}
+      },
+      "id": "send-error-email",
+      "name": "Send Error Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2230, 500]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "operation": "create",
+        "tableId": "workflow_logs",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "Publication LinkedIn",
+            "date_execution": "={{ $now.toISO() }}",
+            "statut": "Erreur",
+            "posts_generes": 0,
+            "erreurs": "={{ $('Error Handler').first().json.error_message }}",
+            "details": "={{ JSON.stringify({ post_type: $('Error Handler').first().json.post_type, titre: $('Error Handler').first().json.titre }) }}"
+          }
+        }
+      },
+      "id": "log-error",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2450, 500]
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Posts Valeur",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Posts Promo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Posts Valeur": {
+      "main": [
+        [
+          {
+            "node": "Merge All Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Posts Promo": {
+      "main": [
+        [
+          {
+            "node": "Merge All Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Posts": {
+      "main": [
+        [
+          {
+            "node": "IF No Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF No Posts": {
+      "main": [
+        [
+          {
+            "node": "Log Nothing to Publish",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Each Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Each Post": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Prepare Post Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Post Data": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Register Image Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Image Upload": {
+      "main": [
+        [
+          {
+            "node": "Upload Image Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image Binary": {
+      "main": [
+        [
+          {
+            "node": "Create LinkedIn Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create LinkedIn Post": {
+      "main": [
+        [
+          {
+            "node": "IF Promo Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Promo Post": {
+      "main": [
+        [
+          {
+            "node": "Update Post Promo Publie",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Post Valeur Publie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Post Promo Publie": {
+      "main": [
+        [
+          {
+            "node": "Update Produit Poste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Produit Poste": {
+      "main": [
+        [
+          {
+            "node": "Merge Update Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Post Valeur Publie": {
+      "main": [
+        [
+          {
+            "node": "Merge Update Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Update Results": {
+      "main": [
+        [
+          {
+            "node": "Send Success Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Success Email": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Success": {
+      "main": [
+        [
+          {
+            "node": "Loop Each Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "IF Error Promo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Error Promo": {
+      "main": [
+        [
+          {
+            "node": "Update Promo Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Valeur Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Promo Error": {
+      "main": [
+        [
+          {
+            "node": "Send Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Valeur Error": {
+      "main": [
+        [
+          {
+            "node": "Send Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Error Email": {
+      "main": [
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Paris",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "RapidPub",
+      "id": "rapidpub"
+    },
+    {
+      "name": "LinkedIn",
+      "id": "linkedin"
+    },
+    {
+      "name": "Publication",
+      "id": "publication"
+    }
+  ],
+  "pinData": {},
+  "versionId": "2",
+  "meta": {
+    "instanceId": "rapidpub-n8n"
+  }
+}
